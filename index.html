@@ -3,126 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Hitung Gaji Karyawan</title>
+    <title>Aplikasi Hitung Gaji</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; padding: 0; }
+        /* Hide number input spinners */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
         }
+        input[type="number"] { -moz-appearance: textfield; }
+        .toast-enter { animation: slideIn 0.3s ease-out forwards; }
+        .toast-leave { animation: slideOut 0.3s ease-in forwards; }
+        @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
     </style>
 </head>
-<body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-900">
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans pb-24">
 
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-        <h1 class="text-3xl font-black mb-6 text-gray-800 text-center">Dashboard Gaji</h1>
-        
-        <div class="mb-8 no-print">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Karyawan:</label>
-            <select id="employeeSelect" onchange="updateSalaryForm()" class="w-full p-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition">
-                <option value="" selected>-- Sedang mengambil data dari CSV... --</option>
-            </select>
+    <!-- Navbar -->
+    <nav class="bg-blue-600 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <svg class="w-8 h-8 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-bold text-xl text-white">Hitung Gaji Pro</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Control Panel -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex flex-col sm:flex-row items-end gap-4">
+                <div class="flex-1 w-full sm:w-auto">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Periode Penggajian</label>
+                    <input type="month" id="periodeInput" onchange="handlePeriodeChange()" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                </div>
+                <div class="flex-1 w-full sm:w-auto">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Karyawan</label>
+                    <select id="karyawanSelect" onchange="handleKaryawanChange()" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <option value="all">Semua Karyawan (Memuat...)</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
-        <div id="salaryForm" class="hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-4 bg-blue-50 rounded-xl">
-                    <label class="block text-xs font-bold text-blue-800 uppercase">Gaji 1 Bulan</label>
-                    <input type="text" id="dispGaji" readonly class="w-full bg-transparent text-2xl font-black text-blue-900 focus:outline-none">
-                </div>
-                <div class="p-4 bg-emerald-50 rounded-xl">
-                    <label class="block text-xs font-bold text-emerald-800 uppercase">Bonus</label>
-                    <input type="text" id="dispBonus" class="w-full bg-transparent text-2xl font-black text-emerald-900 focus:outline-none" oninput="handleCurrencyInput(this)">
-                </div>
+        <!-- Data Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[300px]">
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span class="mt-3 text-slate-600 font-medium text-sm">Memuat Data...</span>
             </div>
 
-            <div class="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                <label class="block text-xs font-bold text-rose-800 uppercase mb-2">Potongan Absensi</label>
-                <div class="flex items-center space-x-4">
-                    <input type="number" id="inJmlAbsen" value="0" oninput="calculate()" class="w-20 p-2 text-xl font-bold rounded-lg border">
-                    <span class="text-gray-500">hari x</span>
-                    <input type="text" id="dispPotongan" readonly class="w-40 p-2 text-xl font-bold rounded-lg border">
-                    <span class="text-rose-600 font-bold">= - <span id="outTotalPotong">Rp 0</span></span>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
+                            <th class="px-4 py-3 font-semibold w-16">NoID</th>
+                            <th class="px-4 py-3 font-semibold min-w-[150px]">Nama</th>
+                            <th class="px-4 py-3 font-semibold min-w-[120px]">Jabatan</th>
+                            <th class="px-4 py-3 font-semibold w-28 text-center">Hadir</th>
+                            <th class="px-4 py-3 font-semibold w-28 text-center">Absen/Izin</th>
+                            <th class="px-4 py-3 font-semibold min-w-[140px] text-right">Gaji Pokok (Rp)</th>
+                            <th class="px-4 py-3 font-semibold min-w-[140px] text-right">Bonus (Rp)</th>
+                            <th class="px-4 py-3 font-semibold min-w-[140px] text-right">Potongan (Rp)</th>
+                            <th class="px-4 py-3 font-semibold min-w-[140px] text-right">Total Potongan (Rp)</th>
+                            <th class="px-4 py-3 font-semibold min-w-[150px] text-right text-blue-700">Total Gaji (Rp)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
+                        <tr>
+                            <td colspan="10" class="px-4 py-12 text-center text-slate-500">
+                                Pilih periode penggajian untuk memuat data.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+        </div>
+    </main>
 
-            <div class="p-8 bg-gray-900 rounded-2xl text-white text-center shadow-2xl">
-                <p class="text-gray-400 text-sm font-bold uppercase tracking-widest">Total Gaji Diterima</p>
-                <h2 id="outGajiBersih" class="text-5xl font-black mt-2">Rp 0</h2>
+    <!-- Bottom Save Action Bar -->
+    <div id="bottomBar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 transform translate-y-full transition-transform duration-300 z-40">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <div>
+                <p class="text-sm text-slate-500">Menyimpan ke periode:</p>
+                <p id="savePeriodeLabel" class="font-bold text-slate-800">-</p>
             </div>
-
-            <div class="flex justify-center mt-6 no-print">
-                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition">
-                    🖨️ Cetak ke PDF
-                </button>
-            </div>
+            <button onclick="saveData()" id="btnSimpan" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Simpan Periode Ini
+            </button>
         </div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
     <script>
-        let employees = {};
+        // ==========================================
+        // 1. REPLACE THIS URL WITH YOUR GAS WEB APP URL
+        // ==========================================
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzRWZ9nYxMQeRorgXeVI80-wYkuEw-LLGKHsVlIvzouWMxxhR20jRJyvxgNK3qAW5Rb/exec";
+        
+        // Application State
+        let allUsers = []; // Cache list semua karyawan (hanya ditarik 1x)
+        let cachedPayroll = []; // Cache data gaji untuk periode terpilih
+        let currentData = {}; // Data yang sedang tampil di tabel
+        let currentPeriode = "";
 
-        const toIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+        const formatRp = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
 
-        function handleCurrencyInput(el) {
-            let val = el.value.replace(/[^0-9]/g, '');
-            el.value = val ? toIDR(val).replace('Rp ', '') : '';
-            calculate();
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
+            const icon = type === 'success' ? '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            
+            toast.className = `toast-enter flex items-center p-4 border-l-4 rounded shadow-md ${bgClass}`;
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-leave');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
-        async function fetchData() {
-            const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTjHLUyc7UCb79q96AOF4dBMShS2VK1b534TtAYVKdZggSNEm1luLCr9VPh_yD2N2xHNglAcY-Z7Enj/pub?gid=452057664&single=true&output=csv`;
+        // Initialize App on Page Load
+        document.addEventListener('DOMContentLoaded', async () => {
+            if(GAS_URL.includes("YOUR_SCRIPT_ID_HERE")) {
+                showToast('Gagal: GAS_URL belum diatur!', 'error');
+                return;
+            }
+
+            // 1. Set default periode to previous month
+            const today = new Date();
+            today.setMonth(today.getMonth() - 1);
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const defaultPeriode = `${yyyy}-${mm}`;
+            document.getElementById('periodeInput').value = defaultPeriode;
+            
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
+            // 2. Fetch users list (Hanya dilakukan 1x)
+            await loadKaryawanList();
+
+            // 3. Fetch payroll untuk periode default
+            await handlePeriodeChange();
+        });
+
+        // Fetch user list (Hanya dieksekusi sekali di awal)
+        async function loadKaryawanList() {
             try {
-                const response = await fetch(url);
-                const data = await response.text();
-                const rows = data.split('\n').slice(1);
-                
-                const select = document.getElementById('employeeSelect');
-                select.innerHTML = '<option value="" disabled selected>-- Pilih Karyawan --</option>';
-
-                rows.forEach((row, index) => {
-                    const cols = row.split(',');
-                    const nama = cols[2]?.replace(/"/g, '');
-                    const gaji = parseFloat(cols[8]) || 0;
-                    const bonus = parseFloat(cols[9]) || 0;
-                    const potong = parseFloat(cols[10]) || 0;
-
-                    if (nama) {
-                        employees[index] = { nama, gaji, bonus, potong };
-                        select.innerHTML += `<option value="${index}">${nama}</option>`;
-                    }
-                });
+                const res = await fetch(`${GAS_URL}?action=getUsers`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    allUsers = data.data;
+                    const select = document.getElementById('karyawanSelect');
+                    select.innerHTML = '<option value="all">Semua Karyawan</option>';
+                    allUsers.forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u.noid;
+                        opt.textContent = `${u.noid} - ${u.nama}`;
+                        select.appendChild(opt);
+                    });
+                }
             } catch (err) {
-                console.error("Error loading CSV:", err);
+                console.error("Gagal memuat daftar karyawan:", err);
+                document.getElementById('karyawanSelect').innerHTML = '<option value="all">Gagal memuat data</option>';
+                showToast('Gagal memuat daftar karyawan', 'error');
             }
         }
 
-        function updateSalaryForm() {
-            const id = document.getElementById('employeeSelect').value;
-            const emp = employees[id];
-            if(emp) {
-                document.getElementById('salaryForm').classList.remove('hidden');
-                document.getElementById('dispGaji').value = toIDR(emp.gaji);
-                document.getElementById('dispBonus').value = emp.bonus.toLocaleString('id-ID');
-                document.getElementById('dispPotongan').value = toIDR(emp.potong);
-                calculate();
+        // Triggered ketika Periode diubah (Tarik data gaji dari Spreadsheet)
+        async function handlePeriodeChange() {
+            const periode = document.getElementById('periodeInput').value;
+            
+            if (!periode) {
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '<tr><td colspan="10" class="px-4 py-12 text-center text-slate-500">Pilih periode penggajian untuk memuat data.</td></tr>';
+                document.getElementById('bottomBar').classList.add('translate-y-full');
+                return;
+            }
+
+            currentPeriode = periode;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            try {
+                // Hanya fetch data gaji karena data user sudah di-cache di variabel allUsers
+                const res = await fetch(`${GAS_URL}?action=getPayroll&periode=${periode}`);
+                const data = await res.json();
+                
+                if (data.status !== "success") {
+                    throw new Error("Gagal mengambil data gaji dari server");
+                }
+
+                cachedPayroll = data.data; // Simpan data gaji ke memori lokal
+                
+                // Mulai menggabungkan dan memproses data untuk ditampilkan
+                processAndRenderData();
+                showToast('Data periode berhasil dimuat');
+
+            } catch (err) {
+                showToast(err.message, 'error');
+                console.error(err);
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
-        function calculate() {
-            const gaji = parseFloat(document.getElementById('dispGaji').value.replace(/[^0-9]/g, '')) || 0;
-            const bonus = parseFloat(document.getElementById('dispBonus').value.replace(/[^0-9]/g, '')) || 0;
-            const jmlAbsen = parseFloat(document.getElementById('inJmlAbsen').value) || 0;
-            const potongPerHari = parseFloat(document.getElementById('dispPotongan').value.replace(/[^0-9]/g, '')) || 0;
-
-            const totalPotong = jmlAbsen * potongPerHari;
-            const totalGaji = (gaji + bonus) - totalPotong;
-
-            document.getElementById('outTotalPotong').innerText = toIDR(totalPotong);
-            document.getElementById('outGajiBersih').innerText = toIDR(totalGaji);
+        // Triggered ketika Dropdown Karyawan diubah (TANPA fetch ke server)
+        function handleKaryawanChange() {
+            processAndRenderData();
         }
 
-        window.onload = fetchData;
+        // Memproses gabungan data User dan Gaji, lalu menampilkan ke Tabel
+        function processAndRenderData() {
+            if (allUsers.length === 0) return; // Tunggu data user beres
+
+            const selectedNoid = document.getElementById('karyawanSelect').value;
+            let usersToDisplay = allUsers;
+            
+            // Filter user jika tidak memilih "Semua Karyawan"
+            if (selectedNoid !== 'all') {
+                usersToDisplay = usersToDisplay.filter(u => String(u.noid) === String(selectedNoid));
+            }
+            
+            // Map past payroll for quick lookup by NoID
+            const pastDataMap = {};
+            cachedPayroll.forEach(p => pastDataMap[p.noid] = p);
+
+            currentData = {}; // reset state tampilan saat ini
+
+            // Merge Logic
+            usersToDisplay.forEach(u => {
+                const saved = pastDataMap[u.noid];
+                currentData[u.noid] = {
+                    noid: u.noid,
+                    nama: u.nama,
+                    jabatan: u.jabatan,
+                    bonusKehadiranBase: u.bonusKehadiranBase,
+                    potonganBase: u.potonganBase,
+                    kehadiran: saved ? saved.kehadiran : 0,
+                    absen: saved ? saved.absen : 0,
+                    gajiPokok: saved ? saved.gajiPokok : u.gajiPokokBase,
+                    bonus: saved ? saved.bonus : 0,
+                    totalPotongan: saved ? saved.potongan : 0,
+                    totalGaji: saved ? saved.totalGaji : u.gajiPokokBase
+                };
+            });
+
+            renderTable();
+            
+            // Show bottom bar
+            document.getElementById('savePeriodeLabel').textContent = currentPeriode;
+            document.getElementById('bottomBar').classList.remove('translate-y-full');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            Object.values(currentData).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 text-slate-700">${row.noid}</td>
+                    <td class="px-4 py-3 font-medium text-slate-900">${row.nama}</td>
+                    <td class="px-4 py-3 text-slate-600 text-xs">${row.jabatan}</td>
+                    <td class="px-4 py-3">
+                        <input type="number" min="0" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-center focus:ring-1 focus:ring-blue-500 outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" min="0" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-center focus:ring-1 focus:ring-blue-500 outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" data-id="${row.noid}" data-field="gajiPokok" value="${row.gajiPokok}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" data-id="${row.noid}" data-field="bonus" value="${row.bonus}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" data-id="${row.noid}" data-field="potonganBase" value="${row.potonganBase}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" data-id="${row.noid}" data-field="totalPotongan" value="${row.totalPotongan}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold text-blue-700" id="total-${row.noid}">
+                        Rp ${formatRp(row.totalGaji)}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Bind Events
+            document.querySelectorAll('.table-input').forEach(input => {
+                input.addEventListener('input', handleInputChange);
+            });
+        }
+
+        function handleInputChange(e) {
+            const noid = e.target.getAttribute('data-id');
+            const field = e.target.getAttribute('data-field');
+            const val = parseInt(e.target.value) || 0;
+            
+            const row = currentData[noid];
+            row[field] = val; // Update raw state
+
+            // Real-Time Calculation Logic
+            // If the user changes attendance/absence, auto-calc bonus & potongan
+            if (field === 'kehadiran') {
+                row.bonus = row.bonusKehadiranBase * row.kehadiran;
+                document.querySelector(`input[data-id="${noid}"][data-field="bonus"]`).value = row.bonus;
+            }
+            if (field === 'absen' || field === 'potonganBase') {
+                row.totalPotongan = row.potonganBase * row.absen;
+                document.querySelector(`input[data-id="${noid}"][data-field="totalPotongan"]`).value = row.totalPotongan;
+            }
+
+            // Always recalculate Total Gaji regardless of what changed
+            row.totalGaji = row.gajiPokok + row.bonus - row.totalPotongan;
+            document.getElementById(`total-${noid}`).textContent = `Rp ${formatRp(row.totalGaji)}`;
+        }
+
+        async function saveData() {
+            const btn = document.getElementById('btnSimpan');
+            btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Menyimpan...';
+            btn.disabled = true;
+
+            // Prepare Payload
+            const payload = {
+                periode: currentPeriode,
+                data: Object.values(currentData).map(row => ({
+                    noid: row.noid,
+                    nama: row.nama,
+                    kehadiran: row.kehadiran,
+                    absen: row.absen,
+                    gajiPokok: row.gajiPokok,
+                    bonus: row.bonus,
+                    potongan: row.totalPotongan,
+                    totalGaji: row.totalGaji
+                }))
+            };
+
+            try {
+                // Send as text/plain to bypass Pre-flight CORS checking in Google Apps Script
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(result.message, 'success');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (err) {
+                showToast('Gagal menyimpan: ' + err.message, 'error');
+                console.error(err);
+            } finally {
+                btn.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Simpan Periode Ini';
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
