@@ -107,7 +107,7 @@
         // ==========================================
         // 1. REPLACE THIS URL WITH YOUR GAS WEB APP URL
         // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzRWZ9nYxMQeRorgXeVI80-wYkuEw-LLGKHsVlIvzouWMxxhR20jRJyvxgNK3qAW5Rb/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzG_liQjiKJA9ajnwWDIPtBgK4JeWpCG_CZjdiKGrDBaGRyjMXDgOERtKaRRHlgW5EWCw/exec";
         
         // Application State
         let allUsers = []; // Cache list semua karyawan (hanya ditarik 1x)
@@ -243,18 +243,37 @@
             // Merge Logic
             usersToDisplay.forEach(u => {
                 const saved = pastDataMap[u.noid];
+                
+                // Cek jika data dari sheet "gaji" ada
+                const hasSavedRecord = !!saved;
+                // Cek jika data dari sheet "gaji" ada dan totalGaji bukan 0
+                const hasValidPayroll = hasSavedRecord && Number(saved.totalGaji) !== 0;
+
+                // Tetap ambil kehadiran dan absen jika record ada (meskipun totalGaji = 0)
+                const kehadiran = hasSavedRecord ? Number(saved.kehadiran) : 0;
+                const absen = hasSavedRecord ? Number(saved.absen) : 0;
+
+                // Gaji pokok fallback ke base "userlist" jika totalGaji = 0
+                const gajiPokok = hasValidPayroll ? Number(saved.gajiPokok) : Number(u.gajiPokokBase);
+
+                // Auto-kalkulasi bonus dan potongan jika menggunakan data kehadiran/absen tapi totalGaji dari database = 0
+                const bonus = hasValidPayroll ? Number(saved.bonus) : (Number(u.bonusKehadiranBase) * kehadiran);
+                const totalPotongan = hasValidPayroll ? Number(saved.potongan) : (Number(u.potonganBase) * absen);
+                const totalGaji = hasValidPayroll ? Number(saved.totalGaji) : (gajiPokok + bonus - totalPotongan);
+
                 currentData[u.noid] = {
                     noid: u.noid,
                     nama: u.nama,
                     jabatan: u.jabatan,
-                    bonusKehadiranBase: u.bonusKehadiranBase,
-                    potonganBase: u.potonganBase,
-                    kehadiran: saved ? saved.kehadiran : 0,
-                    absen: saved ? saved.absen : 0,
-                    gajiPokok: saved ? saved.gajiPokok : u.gajiPokokBase,
-                    bonus: saved ? saved.bonus : 0,
-                    totalPotongan: saved ? saved.potongan : 0,
-                    totalGaji: saved ? saved.totalGaji : u.gajiPokokBase
+                    bonusKehadiranBase: Number(u.bonusKehadiranBase) || 0,
+                    potonganBase: Number(u.potonganBase) || 0,
+                    kehadiran: kehadiran,
+                    absen: absen,
+                    gajiPokok: gajiPokok,
+                    bonus: bonus,
+                    totalPotongan: totalPotongan,
+                    totalGaji: totalGaji,
+                    isLocked: hasValidPayroll
                 };
             });
 
@@ -272,29 +291,45 @@
             Object.values(currentData).forEach(row => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
+                
+                // Styling input fields based on locked status
+                const disabledAttr = row.isLocked ? 'disabled' : '';
+                const baseInputCls = 'table-input w-full px-2 py-1 border rounded outline-none transition';
+                const activeCls = 'border-slate-300 focus:ring-1 focus:ring-blue-500 bg-white';
+                const lockedCls = 'border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed';
+                const inputCls = `${baseInputCls} ${row.isLocked ? lockedCls : activeCls}`;
+                
+                // Badge indikator untuk karyawan yang sudah final digaji
+                const badge = row.isLocked 
+                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 mt-1 border border-green-200"><svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Terkunci</span>`
+                    : '';
+
                 tr.innerHTML = `
                     <td class="px-4 py-3 text-slate-700">${row.noid}</td>
-                    <td class="px-4 py-3 font-medium text-slate-900">${row.nama}</td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-900">${row.nama}</div>
+                        ${badge}
+                    </td>
                     <td class="px-4 py-3 text-slate-600 text-xs">${row.jabatan}</td>
                     <td class="px-4 py-3">
-                        <input type="number" min="0" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-center focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="number" min="0" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="${inputCls} text-center" ${disabledAttr}>
                     </td>
                     <td class="px-4 py-3">
-                        <input type="number" min="0" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-center focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="number" min="0" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="${inputCls} text-center" ${disabledAttr}>
                     </td>
                     <td class="px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="gajiPokok" value="${row.gajiPokok}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="number" data-id="${row.noid}" data-field="gajiPokok" value="${row.gajiPokok}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
                     <td class="px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="bonus" value="${row.bonus}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="number" data-id="${row.noid}" data-field="bonus" value="${row.bonus}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
                     <td class="px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="potonganBase" value="${row.potonganBase}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="number" data-id="${row.noid}" data-field="potonganBase" value="${row.potonganBase}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
                     <td class="px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="totalPotongan" value="${row.totalPotongan}" class="table-input w-full px-2 py-1 border border-slate-300 rounded text-right focus:ring-1 focus:ring-blue-500 outline-none">
+                        <input type="number" data-id="${row.noid}" data-field="totalPotongan" value="${row.totalPotongan}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
-                    <td class="px-4 py-3 text-right font-bold text-blue-700" id="total-${row.noid}">
+                    <td class="px-4 py-3 text-right font-bold ${row.isLocked ? 'text-slate-500' : 'text-blue-700'}" id="total-${row.noid}">
                         Rp ${formatRp(row.totalGaji)}
                     </td>
                 `;
