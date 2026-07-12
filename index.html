@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Hitung Gaji</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Hide number input spinners */
+        /* Menyembunyikan spinner pada input number */
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -21,7 +22,6 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 font-sans pb-24">
 
-    <!-- Navbar -->
     <nav class="bg-blue-600 shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -34,7 +34,6 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Control Panel -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
             <div class="flex flex-col sm:flex-row items-end gap-4">
                 <div class="flex-1 w-full sm:w-auto">
@@ -50,9 +49,7 @@
             </div>
         </div>
 
-        <!-- Data Table -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[300px]">
-            <!-- Loading Overlay -->
             <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 <span class="mt-3 text-slate-600 font-medium text-sm">Memuat Data...</span>
@@ -64,14 +61,14 @@
                         <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
                             <th class="px-4 py-3 font-semibold w-16">NoID</th>
                             <th class="px-4 py-3 font-semibold min-w-[150px]">Nama</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[120px]">Jabatan</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold w-28 text-center">Hadir</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold w-28 text-center">Absen/Izin</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[140px] text-right">Gaji Pokok (Rp)</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[140px] text-right">Bonus (Rp)</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[140px] text-right">Potongan (Rp)</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[140px] text-right">Total Potongan (Rp)</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[150px] text-right text-blue-700">Total Gaji (Rp)</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Hadir</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Absen</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Gaji Pokok</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Lembur</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Bonus</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Pot. Base</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Total Pot.</th>
+                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[130px] text-right text-blue-700">Total Gaji</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
@@ -86,7 +83,6 @@
         </div>
     </main>
 
-    <!-- Bottom Save Action Bar -->
     <div id="bottomBar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 transform translate-y-full transition-transform duration-300 z-40">
         <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
             <div>
@@ -95,26 +91,41 @@
             </div>
             <button onclick="saveData()" id="btnSimpan" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Simpan Periode Ini
+                Simpan Data Lengkap
             </button>
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
+    <!-- RLS Modal (Tidak diubah) -->
+    <div id="rlsModal" class="fixed inset-0 bg-slate-900/50 hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
+            <div class="flex items-center text-red-600 mb-4">
+                <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h2 class="text-xl font-bold">Akses Database Ditolak (RLS)</h2>
+            </div>
+            <p class="mb-4 text-slate-600 text-sm">Supabase memblokir operasi karena <strong>Row-Level Security (RLS)</strong> aktif pada tabel <code id="rlsModalErrorTable" class="bg-slate-100 px-1 py-0.5 rounded text-red-500 font-bold"></code>.</p>
+            <div class="bg-slate-800 text-emerald-400 p-4 rounded-lg font-mono text-xs mb-6 overflow-x-auto">
+                <span id="rlsSqlCode"></span>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="document.getElementById('rlsModal').classList.add('hidden')" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
 
     <script>
-        // ==========================================
-        // 1. REPLACE THIS URL WITH YOUR GAS WEB APP URL
-        // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzG_liQjiKJA9ajnwWDIPtBgK4JeWpCG_CZjdiKGrDBaGRyjMXDgOERtKaRRHlgW5EWCw/exec";
+        const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ3N6ZnZtYnB2em5vdHlrcnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzQwMjcsImV4cCI6MjA5OTMxMDAyN30.O0-y9FI_sikkPVig2XNDJ_zlTnfJZv-hRirPurs8yQc';
         
-        // Application State
-        let allUsers = []; // Cache list semua karyawan (hanya ditarik 1x)
-        let cachedPayroll = []; // Cache data gaji untuk periode terpilih
-        let currentData = {}; // Data yang sedang tampil di tabel
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let allUsers = []; 
+        let cachedPayroll = []; 
+        let currentData = {}; 
         let currentPeriode = "";
-        let expandedNoid = null; // Menyimpan ID baris yang sedang di-expand di mobile
+        let expandedNoid = null; 
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
 
@@ -131,176 +142,152 @@
             setTimeout(() => {
                 toast.classList.replace('toast-enter', 'toast-leave');
                 setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            }, 4000);
         }
 
-        // Initialize App on Page Load
-        document.addEventListener('DOMContentLoaded', async () => {
-            if(GAS_URL.includes("YOUR_SCRIPT_ID_HERE")) {
-                showToast('Gagal: GAS_URL belum diatur!', 'error');
-                return;
+        function handleSupabaseError(err, tableName) {
+            if (err.code === '42501') {
+                document.getElementById('rlsModalErrorTable').textContent = tableName;
+                document.getElementById('rlsSqlCode').innerHTML = `ALTER TABLE public.${tableName} DISABLE ROW LEVEL SECURITY;`;
+                document.getElementById('rlsModal').classList.remove('hidden');
+            } else {
+                showToast('Error: ' + err.message, 'error');
             }
+        }
 
-            // 1. Set default periode to previous month
+        document.addEventListener('DOMContentLoaded', async () => {
             const today = new Date();
             today.setMonth(today.getMonth() - 1);
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const defaultPeriode = `${yyyy}-${mm}`;
-            document.getElementById('periodeInput').value = defaultPeriode;
+            document.getElementById('periodeInput').value = `${yyyy}-${mm}`;
             
             document.getElementById('loadingOverlay').classList.remove('hidden');
-
-            // 2. Fetch users list (Hanya dilakukan 1x)
             await loadKaryawanList();
-
-            // 3. Fetch payroll untuk periode default
             await handlePeriodeChange();
         });
 
-        // Fetch user list (Hanya dieksekusi sekali di awal)
         async function loadKaryawanList() {
             try {
-                const res = await fetch(`${GAS_URL}?action=getUsers`);
-                const data = await res.json();
-                if (data.status === 'success') {
-                    allUsers = data.data;
-                    const select = document.getElementById('karyawanSelect');
-                    select.innerHTML = '<option value="all">Semua Karyawan</option>';
-                    allUsers.forEach(u => {
-                        const opt = document.createElement('option');
-                        opt.value = u.noid;
-                        opt.textContent = `${u.noid} - ${u.nama}`;
-                        select.appendChild(opt);
-                    });
-                }
+                const { data, error } = await supabaseClient
+                    .from('employees')
+                    .select('code, name, base_salary, attendance_bonus, deduction')
+                    .order('code', { ascending: true });
+
+                if (error) throw error;
+                
+                allUsers = data.map(u => ({
+                    noid: u.code,
+                    nama: u.name,
+                    gajiPokokBase: u.base_salary || 0,
+                    bonusKehadiranBase: u.attendance_bonus || 0,
+                    potonganBase: u.deduction || 0
+                }));
+
+                const select = document.getElementById('karyawanSelect');
+                select.innerHTML = '<option value="all">Semua Karyawan</option>';
+                allUsers.forEach(u => {
+                    select.add(new Option(`${u.noid} - ${u.nama}`, u.noid));
+                });
             } catch (err) {
-                console.error("Gagal memuat daftar karyawan:", err);
                 document.getElementById('karyawanSelect').innerHTML = '<option value="all">Gagal memuat data</option>';
-                showToast('Gagal memuat daftar karyawan', 'error');
+                handleSupabaseError(err, 'employees');
             }
         }
 
-        // Triggered ketika Periode diubah (Tarik data gaji dari Spreadsheet)
         async function handlePeriodeChange() {
             const periode = document.getElementById('periodeInput').value;
-            
-            if (!periode) {
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = '<tr><td colspan="10" class="px-4 py-12 text-center text-slate-500">Pilih periode penggajian untuk memuat data.</td></tr>';
-                document.getElementById('bottomBar').classList.add('translate-y-full');
-                return;
-            }
+            if (!periode) return;
 
             currentPeriode = periode;
             document.getElementById('loadingOverlay').classList.remove('hidden');
             
             try {
-                // Hanya fetch data gaji karena data user sudah di-cache di variabel allUsers
-                const res = await fetch(`${GAS_URL}?action=getPayroll&periode=${periode}`);
-                const data = await res.json();
+                const { data, error } = await supabaseClient
+                    .from('gaji')
+                    .select('*')
+                    .eq('periode', periode);
                 
-                if (data.status !== "success") {
-                    throw new Error("Gagal mengambil data gaji dari server");
-                }
-
-                cachedPayroll = data.data; // Simpan data gaji ke memori lokal
+                if (error) throw error;
+                cachedPayroll = data || []; 
                 
-                // Mulai menggabungkan dan memproses data untuk ditampilkan
                 processAndRenderData();
-                showToast('Data periode berhasil dimuat');
-
             } catch (err) {
-                showToast(err.message, 'error');
-                console.error(err);
+                handleSupabaseError(err, 'gaji');
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
-        // Triggered ketika Dropdown Karyawan diubah (TANPA fetch ke server)
         function handleKaryawanChange() {
             processAndRenderData();
         }
 
-        // Accordion toggle logic untuk mobile
         function toggleAccordion(noid) {
-            if (expandedNoid === noid) {
-                expandedNoid = null; // Tutup jika diklik lagi
-            } else {
-                expandedNoid = noid; // Buka yang baru
-            }
+            if (expandedNoid === noid) expandedNoid = null; 
+            else expandedNoid = noid; 
             
-            // Update UI tanpa render ulang tabel sepenuhnya
             document.querySelectorAll('.detail-row').forEach(row => row.classList.add('hidden'));
             document.querySelectorAll('.chevron-icon').forEach(icon => icon.classList.remove('rotate-180'));
             
             if (expandedNoid) {
-                const targetRow = document.getElementById(`detail-${expandedNoid}`);
-                const targetIcon = document.getElementById(`chevron-${expandedNoid}`);
-                if (targetRow) targetRow.classList.remove('hidden');
-                if (targetIcon) targetIcon.classList.add('rotate-180');
+                document.getElementById(`detail-${expandedNoid}`)?.classList.remove('hidden');
+                document.getElementById(`chevron-${expandedNoid}`)?.classList.add('rotate-180');
             }
         }
 
-        // Memproses gabungan data User dan Gaji, lalu menampilkan ke Tabel
         function processAndRenderData() {
-            if (allUsers.length === 0) return; // Tunggu data user beres
+            if (allUsers.length === 0) return; 
 
             const selectedNoid = document.getElementById('karyawanSelect').value;
-            let usersToDisplay = allUsers;
+            let usersToDisplay = selectedNoid === 'all' ? allUsers : allUsers.filter(u => String(u.noid) === String(selectedNoid));
             
-            // Filter user jika tidak memilih "Semua Karyawan"
-            if (selectedNoid !== 'all') {
-                usersToDisplay = usersToDisplay.filter(u => String(u.noid) === String(selectedNoid));
-            }
-            
-            // Map past payroll for quick lookup by NoID
             const pastDataMap = {};
             cachedPayroll.forEach(p => pastDataMap[p.noid] = p);
 
-            currentData = {}; // reset state tampilan saat ini
+            currentData = {}; 
 
-            // Merge Logic
             usersToDisplay.forEach(u => {
                 const saved = pastDataMap[u.noid];
-                
-                // Cek jika data dari sheet "gaji" ada
                 const hasSavedRecord = !!saved;
-                // Cek jika data dari sheet "gaji" ada dan totalGaji bukan 0
-                const hasValidPayroll = hasSavedRecord && Number(saved.totalGaji) !== 0;
+                const isLocked = hasSavedRecord && saved.total_gaji !== null;
 
-                // Tetap ambil kehadiran dan absen jika record ada (meskipun totalGaji = 0)
-                const kehadiran = hasSavedRecord ? Number(saved.kehadiran) : 0;
-                const absen = hasSavedRecord ? Number(saved.absen) : 0;
+                // LOGIKA PENGHILANGAN NOL:
+                // Jika belum ada record (data kosong), variabel diset ke string kosong "" (bukan 0) 
+                // agar input HTML terlihat bersih.
+                const kehadiran = hasSavedRecord ? Number(saved.total_kehadiran) : "";
+                const absen = hasSavedRecord ? Number(saved.absen_izin) : "";
+                const lembur = hasSavedRecord ? Number(saved.lembur) : ""; 
+                const bonus = hasSavedRecord ? Number(saved.bonus) : "";
 
-                // Gaji pokok fallback ke base "userlist" jika totalGaji = 0
-                const gajiPokok = hasValidPayroll ? Number(saved.gajiPokok) : Number(u.gajiPokokBase);
-
-                // Auto-kalkulasi bonus dan potongan jika menggunakan data kehadiran/absen tapi totalGaji dari database = 0
-                const bonus = hasValidPayroll ? Number(saved.bonus) : (Number(u.bonusKehadiranBase) * kehadiran);
-                const totalPotongan = hasValidPayroll ? Number(saved.potongan) : (Number(u.potonganBase) * absen);
-                const totalGaji = hasValidPayroll ? Number(saved.totalGaji) : (gajiPokok + bonus - totalPotongan);
+                const gajiPokok = isLocked ? Number(saved.gaji_pokok) : Number(u.gajiPokokBase);
+                
+                // Gunakan 0 fallback untuk kalkulasi matematis agar tidak NaN
+                const calcAbsen = absen === "" ? 0 : absen;
+                const calcLembur = lembur === "" ? 0 : lembur;
+                const calcBonus = bonus === "" ? 0 : bonus;
+                
+                const totalPotongan = isLocked ? Number(saved.potongan) : (Number(u.potonganBase) * calcAbsen);
+                const totalGaji = isLocked ? Number(saved.total_gaji) : (gajiPokok + calcLembur + calcBonus - totalPotongan);
 
                 currentData[u.noid] = {
+                    id: hasSavedRecord ? saved.id : null, 
                     noid: u.noid,
                     nama: u.nama,
-                    jabatan: u.jabatan,
                     bonusKehadiranBase: Number(u.bonusKehadiranBase) || 0,
                     potonganBase: Number(u.potonganBase) || 0,
-                    kehadiran: kehadiran,
-                    absen: absen,
+                    kehadiran: kehadiran, // Bisa berupa ""
+                    absen: absen,         // Bisa berupa ""
+                    lembur: lembur,       // Bisa berupa ""
                     gajiPokok: gajiPokok,
                     bonus: bonus,
                     totalPotongan: totalPotongan,
                     totalGaji: totalGaji,
-                    isLocked: hasValidPayroll
+                    isLocked: isLocked
                 };
             });
 
             renderTable();
-            
-            // Show bottom bar
             document.getElementById('savePeriodeLabel').textContent = currentPeriode;
             document.getElementById('bottomBar').classList.remove('translate-y-full');
         }
@@ -310,22 +297,18 @@
             tbody.innerHTML = '';
 
             Object.values(currentData).forEach(row => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
-                
-                // Styling input fields based on locked status
                 const disabledAttr = row.isLocked ? 'disabled' : '';
                 const baseInputCls = 'table-input w-full px-2 py-1 border rounded outline-none transition';
-                const activeCls = 'border-slate-300 focus:ring-1 focus:ring-blue-500 bg-white';
+                const activeCls = 'border-slate-300 focus:ring-1 focus:ring-blue-500 bg-white placeholder-slate-300';
                 const lockedCls = 'border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed';
                 const inputCls = `${baseInputCls} ${row.isLocked ? lockedCls : activeCls}`;
                 
-                // Badge indikator untuk karyawan yang sudah final digaji
                 const badge = row.isLocked 
-                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 mt-1 border border-green-200"><svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Terkunci</span>`
+                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 mt-1 border border-green-200">Terkunci</span>`
                     : '';
 
-                // Baris Utama (Terlihat di Desktop & Mobile)
+                // Baris Utama
+                const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition cursor-pointer md:cursor-auto border-b border-slate-100 md:border-none';
                 tr.onclick = () => { if(window.innerWidth < 768) toggleAccordion(row.noid); };
                 
@@ -340,24 +323,26 @@
                             <svg id="chevron-${row.noid}" class="chevron-icon w-5 h-5 text-slate-400 md:hidden transition-transform duration-200 ${expandedNoid === row.noid ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                         </div>
                     </td>
-                    <td class="hidden md:table-cell px-4 py-3 text-slate-600 text-xs">${row.jabatan}</td>
-                    <td class="hidden md:table-cell px-4 py-3">
-                        <input type="number" min="0" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="${inputCls} text-center" ${disabledAttr}>
+                    <td class="hidden md:table-cell px-2 py-3">
+                        <input type="number" min="0" placeholder="-" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="${inputCls} text-center" ${disabledAttr}>
                     </td>
-                    <td class="hidden md:table-cell px-4 py-3">
-                        <input type="number" min="0" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="${inputCls} text-center" ${disabledAttr}>
+                    <td class="hidden md:table-cell px-2 py-3">
+                        <input type="number" min="0" placeholder="-" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="${inputCls} text-center" ${disabledAttr}>
                     </td>
-                    <td class="hidden md:table-cell px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="gajiPokok" value="${row.gajiPokok}" class="${inputCls} text-right" ${disabledAttr}>
+                    <td class="hidden md:table-cell px-2 py-3">
+                        <span class="block text-right text-slate-700 py-1 font-medium">Rp ${formatRp(row.gajiPokok)}</span>
                     </td>
-                    <td class="hidden md:table-cell px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="bonus" value="${row.bonus}" class="${inputCls} text-right" ${disabledAttr}>
+                    <td class="hidden md:table-cell px-2 py-3">
+                        <input type="text" inputmode="numeric" placeholder="-" data-id="${row.noid}" data-field="lembur" value="${row.lembur !== "" ? formatRp(row.lembur) : ""}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
-                    <td class="hidden md:table-cell px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="potonganBase" value="${row.potonganBase}" class="${inputCls} text-right" ${disabledAttr}>
+                    <td class="hidden md:table-cell px-2 py-3">
+                        <input type="text" inputmode="numeric" placeholder="${formatRp(row.bonusKehadiranBase)}" data-id="${row.noid}" data-field="bonus" value="${row.bonus !== "" ? formatRp(row.bonus) : ""}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
-                    <td class="hidden md:table-cell px-4 py-3">
-                        <input type="number" data-id="${row.noid}" data-field="totalPotongan" value="${row.totalPotongan}" class="${inputCls} text-right" ${disabledAttr}>
+                    <td class="hidden md:table-cell px-2 py-3 text-right">
+                        <span class="block text-slate-700 py-1 font-medium">Rp ${formatRp(row.potonganBase)}</span>
+                    </td>
+                    <td class="hidden md:table-cell px-2 py-3">
+                        <span class="block text-right text-red-600 font-medium py-1 total-potongan-label-${row.noid}">Rp ${formatRp(row.totalPotongan)}</span>
                     </td>
                     <td class="hidden md:table-cell px-4 py-3 text-right font-bold ${row.isLocked ? 'text-slate-500' : 'text-blue-700'} total-label-${row.noid}">
                         Rp ${formatRp(row.totalGaji)}
@@ -365,44 +350,44 @@
                 `;
                 tbody.appendChild(tr);
 
-                // Baris Ekstra Detail (Accordion Khusus Mobile)
+                // Baris Ekstra Detail (Mobile)
                 const trDetail = document.createElement('tr');
                 trDetail.id = `detail-${row.noid}`;
                 trDetail.className = `detail-row ${expandedNoid === row.noid ? '' : 'hidden'} md:hidden bg-slate-100/60 shadow-inner border-b border-slate-200`;
                 trDetail.innerHTML = `
                     <td colspan="10" class="px-4 py-4">
                         <div class="flex flex-col gap-3">
-                            <div class="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span class="text-slate-500">Jabatan:</span>
-                                <span class="font-medium text-slate-700">${row.jabatan}</span>
-                            </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-medium text-slate-500 mb-1">Hadir</label>
-                                    <input type="number" min="0" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="${inputCls}" ${disabledAttr}>
+                                    <input type="number" min="0" placeholder="-" data-id="${row.noid}" data-field="kehadiran" value="${row.kehadiran}" class="${inputCls}" ${disabledAttr}>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-slate-500 mb-1">Absen/Izin</label>
-                                    <input type="number" min="0" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="${inputCls}" ${disabledAttr}>
+                                    <input type="number" min="0" placeholder="-" data-id="${row.noid}" data-field="absen" value="${row.absen}" class="${inputCls}" ${disabledAttr}>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-500 mb-1">Gaji Pokok (Rp)</label>
-                                <input type="number" data-id="${row.noid}" data-field="gajiPokok" value="${row.gajiPokok}" class="${inputCls}" ${disabledAttr}>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Gaji Pokok</label>
+                                <div class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-slate-700 font-medium text-sm">Rp ${formatRp(row.gajiPokok)}</div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Lembur (Rp)</label>
+                                <input type="text" inputmode="numeric" placeholder="-" data-id="${row.noid}" data-field="lembur" value="${row.lembur !== "" ? formatRp(row.lembur) : ""}" class="${inputCls}" ${disabledAttr}>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-medium text-slate-500 mb-1">Bonus (Rp)</label>
-                                    <input type="number" data-id="${row.noid}" data-field="bonus" value="${row.bonus}" class="${inputCls}" ${disabledAttr}>
+                                    <input type="text" inputmode="numeric" placeholder="${formatRp(row.bonusKehadiranBase)}" data-id="${row.noid}" data-field="bonus" value="${row.bonus !== "" ? formatRp(row.bonus) : ""}" class="${inputCls}" ${disabledAttr}>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-500 mb-1">Potongan (Base)</label>
-                                    <input type="number" data-id="${row.noid}" data-field="potonganBase" value="${row.potonganBase}" class="${inputCls}" ${disabledAttr}>
+                                    <label class="block text-xs font-medium text-slate-500 mb-1">Pot. Base</label>
+                                    <div class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-slate-700 font-medium text-sm">Rp ${formatRp(row.potonganBase)}</div>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-500 mb-1">Total Potongan (Rp)</label>
-                                <input type="number" data-id="${row.noid}" data-field="totalPotongan" value="${row.totalPotongan}" class="${inputCls}" ${disabledAttr}>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Total Potongan</label>
+                                <div class="px-2 py-1.5 bg-red-50 border border-red-100 rounded text-red-600 font-medium text-sm total-potongan-label-${row.noid}">Rp ${formatRp(row.totalPotongan)}</div>
                             </div>
                             <div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-200">
                                 <span class="text-sm font-semibold text-slate-700">Total Gaji:</span>
@@ -414,8 +399,7 @@
                 tbody.appendChild(trDetail);
             });
 
-            // Bind Events
-            document.querySelectorAll('.table-input').forEach(input => {
+            document.querySelectorAll('.table-input:not([readonly])').forEach(input => {
                 input.addEventListener('input', handleInputChange);
             });
         }
@@ -423,73 +407,109 @@
         function handleInputChange(e) {
             const noid = e.target.getAttribute('data-id');
             const field = e.target.getAttribute('data-field');
-            const val = parseInt(e.target.value) || 0;
+            let rawVal = e.target.value;
             
             const row = currentData[noid];
-            row[field] = val; // Update raw state
+            let numericVal;
 
-            // Sync semua input duplikat (antara Desktop dan Mobile) agar nilainya sama
+            // Penanganan khusus untuk field Rupiah (Lembur dan Bonus)
+            if (field === 'lembur' || field === 'bonus') {
+                // 1. Hilangkan koma dan semua karakter selain angka
+                let cleanStr = rawVal.replace(/,/g, '').replace(/\D/g, '');
+                
+                // 2. Tentukan nilai aslinya (angka murni)
+                numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
+                
+                // 3. Format kembali string untuk ditampilkan (Ribuan dipisah titik)
+                let formattedVal = cleanStr !== "" ? formatRp(numericVal) : "";
+                
+                // 4. Update nilai input UI secara realtime
+                e.target.value = formattedVal;
+                
+                // Set rawVal dengan nilai format untuk sinkronisasi elemen mobile/desktop
+                rawVal = formattedVal;
+            } else {
+                // Input biasa (kehadiran, absen)
+                numericVal = rawVal === "" ? "" : (parseInt(rawVal) || 0);
+            }
+            
+            row[field] = numericVal; 
+
+            // Sinkronisasi input mobile/desktop
             document.querySelectorAll(`input[data-id="${noid}"][data-field="${field}"]`).forEach(el => {
-                if (el !== e.target && el.value != val) el.value = val;
+                if (el !== e.target && el.value !== rawVal) el.value = rawVal;
             });
 
-            // Real-Time Calculation Logic
-            // If the user changes attendance/absence, auto-calc bonus & potongan
-            if (field === 'kehadiran') {
-                row.bonus = row.bonusKehadiranBase * row.kehadiran;
-                document.querySelectorAll(`input[data-id="${noid}"][data-field="bonus"]`).forEach(el => el.value = row.bonus);
-            }
-            if (field === 'absen' || field === 'potonganBase') {
-                row.totalPotongan = row.potonganBase * row.absen;
-                document.querySelectorAll(`input[data-id="${noid}"][data-field="totalPotongan"]`).forEach(el => el.value = row.totalPotongan);
+            // Fallback angka aman untuk kalkulasi (mencegah NaN)
+            const numAbsen = row.absen === "" ? 0 : Number(row.absen);
+            const numKehadiran = row.kehadiran === "" ? 0 : Number(row.kehadiran);
+            const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
+            const numPotonganBase = Number(row.potonganBase) || 0;
+            const numGajiPokok = Number(row.gajiPokok) || 0;
+            const numBonus = Number(row.bonus) || 0;
+
+            if (field === 'absen') {
+                row.totalPotongan = numPotonganBase * numAbsen;
+                // Update tampilan Total Potongan yang kini berwujud text/span
+                document.querySelectorAll(`.total-potongan-label-${noid}`).forEach(el => {
+                    el.textContent = `Rp ${formatRp(row.totalPotongan)}`;
+                });
             }
 
-            // Always recalculate Total Gaji regardless of what changed
-            row.totalGaji = row.gajiPokok + row.bonus - row.totalPotongan;
+            row.totalGaji = numGajiPokok + numLembur + numBonus - (Number(row.totalPotongan) || 0);
             document.querySelectorAll(`.total-label-${noid}`).forEach(el => {
                 el.textContent = `Rp ${formatRp(row.totalGaji)}`;
             });
         }
 
         async function saveData() {
+            // FILTER: Hanya ambil data yang lengkap (Hadir dan Absen terisi bukan kosong "")
+            const dataToSave = Object.values(currentData).filter(row => 
+                row.kehadiran !== "" && row.absen !== ""
+            );
+
+            if (dataToSave.length === 0) {
+                showToast('Tidak ada data yang valid untuk disimpan. Pastikan Hadir dan Absen terisi.', 'error');
+                return;
+            }
+
             const btn = document.getElementById('btnSimpan');
+            const btnOriginalHtml = btn.innerHTML;
             btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Menyimpan...';
             btn.disabled = true;
 
-            // Prepare Payload
-            const payload = {
-                periode: currentPeriode,
-                data: Object.values(currentData).map(row => ({
+            const payload = dataToSave.map(row => {
+                const record = {
                     noid: row.noid,
                     nama: row.nama,
-                    kehadiran: row.kehadiran,
-                    absen: row.absen,
-                    gajiPokok: row.gajiPokok,
-                    bonus: row.bonus,
-                    potongan: row.totalPotongan,
-                    totalGaji: row.totalGaji
-                }))
-            };
+                    periode: currentPeriode,
+                    total_kehadiran: Number(row.kehadiran) || 0,
+                    absen_izin: Number(row.absen) || 0,
+                    gaji_pokok: Number(row.gajiPokok) || 0,
+                    lembur: Number(row.lembur) || 0,
+                    bonus: Number(row.bonus) || 0,
+                    potongan: Number(row.totalPotongan) || 0,
+                    total_gaji: Number(row.totalGaji) || 0
+                };
+                if (row.id) record.id = row.id;
+                return record;
+            });
 
             try {
-                // Send as text/plain to bypass Pre-flight CORS checking in Google Apps Script
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
+                const { data, error } = await supabaseClient
+                    .from('gaji')
+                    .upsert(payload, { onConflict: 'id' }) 
+                    .select();
                 
-                if (result.status === 'success') {
-                    showToast(result.message, 'success');
-                } else {
-                    throw new Error(result.message);
-                }
+                if (error) throw error;
+                
+                showToast(`Berhasil menyimpan ${dataToSave.length} data karyawan!`, 'success');
+                await handlePeriodeChange();
+
             } catch (err) {
-                showToast('Gagal menyimpan: ' + err.message, 'error');
-                console.error(err);
+                handleSupabaseError(err, 'gaji');
             } finally {
-                btn.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Simpan Periode Ini';
+                btn.innerHTML = btnOriginalHtml;
                 btn.disabled = false;
             }
         }
