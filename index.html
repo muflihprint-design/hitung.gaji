@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Hitung Gaji</title>
+    <title>Aplikasi Hitung Gaji & HRIS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -20,79 +20,204 @@
         @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 font-sans pb-24">
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
 
-    <nav class="bg-blue-600 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <svg class="w-8 h-8 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="font-bold text-xl text-white">Hitung Gaji Pro</span>
+    <!-- CONTAINER LOGIN -->
+    <div id="loginView" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">Login Karyawan</h1>
+<p class="text-slate-500 text-sm mt-2">Masuk khusus untuk Owner, HRD & Bendahara</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                    <input type="text" id="loginUsername" required class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Masukkan username">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Masukkan password">
+                </div>
+                <button type="submit" id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors flex justify-center items-center">
+                    Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTAINER APLIKASI UTAMA (Disembunyikan secara default) -->
+    <div id="appView" class="hidden pb-24">
+        <nav class="bg-blue-600 shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <svg class="w-8 h-8 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="font-bold text-xl text-white">Hitung Gaji Pro</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="userInfo" class="text-white text-sm opacity-90 hidden sm:block"></span>
+                        <button onclick="openModalTambah()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition border border-white/30">
+                            + Tambah Karyawan
+                        </button>
+                        <button onclick="handleLogout()" class="px-3 py-2 bg-red-500/80 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition">
+                            Keluar
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-            <div class="flex flex-col sm:flex-row items-end gap-4">
-                <div class="flex-1 w-full sm:w-auto">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Periode Penggajian</label>
-                    <input type="month" id="periodeInput" onchange="handlePeriodeChange()" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                <div class="flex flex-col sm:flex-row items-end gap-4">
+                    <div class="flex-1 w-full sm:w-auto">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Periode Penggajian</label>
+                        <input type="month" id="periodeInput" onchange="handlePeriodeChange()" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="flex-1 w-full sm:w-auto">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Karyawan</label>
+                        <select id="karyawanSelect" onchange="handleKaryawanChange()" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            <option value="all">Semua Karyawan (Memuat...)</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="flex-1 w-full sm:w-auto">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Karyawan</label>
-                    <select id="karyawanSelect" onchange="handleKaryawanChange()" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                        <option value="all">Semua Karyawan (Memuat...)</option>
-                    </select>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[300px]">
+                <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <span class="mt-3 text-slate-600 font-medium text-sm">Memuat Data...</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
+                                <th class="px-4 py-3 font-semibold w-16">NoID</th>
+                                <th class="px-4 py-3 font-semibold min-w-[150px]">Nama</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Hadir</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Absen</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Gaji Pokok</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Lembur</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Bonus</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Pot. Base</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Total Pot.</th>
+                                <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[130px] text-right text-blue-700">Total Gaji</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
+                            <tr>
+                                <td colspan="10" class="px-4 py-12 text-center text-slate-500">
+                                    Pilih periode penggajian untuk memuat data.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
+        </main>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[300px]">
-            <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <span class="mt-3 text-slate-600 font-medium text-sm">Memuat Data...</span>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
-                            <th class="px-4 py-3 font-semibold w-16">NoID</th>
-                            <th class="px-4 py-3 font-semibold min-w-[150px]">Nama</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Hadir</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Absen</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Gaji Pokok</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Lembur</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Bonus</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Pot. Base</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[110px] text-right">Total Pot.</th>
-                            <th class="hidden md:table-cell px-4 py-3 font-semibold min-w-[130px] text-right text-blue-700">Total Gaji</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
-                        <tr>
-                            <td colspan="10" class="px-4 py-12 text-center text-slate-500">
-                                Pilih periode penggajian untuk memuat data.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div id="bottomBar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 transform translate-y-full transition-transform duration-300 z-40">
+            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                <div>
+                    <p class="text-sm text-slate-500">Menyimpan ke periode:</p>
+                    <p id="savePeriodeLabel" class="font-bold text-slate-800">-</p>
+                </div>
+                <button onclick="saveData()" id="btnSimpan" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Simpan Data Lengkap
+                </button>
             </div>
         </div>
-    </main>
+    </div>
 
-    <div id="bottomBar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 transform translate-y-full transition-transform duration-300 z-40">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <div>
-                <p class="text-sm text-slate-500">Menyimpan ke periode:</p>
-                <p id="savePeriodeLabel" class="font-bold text-slate-800">-</p>
+    <!-- MODAL TAMBAH KARYAWAN -->
+    <div id="modalTambah" class="fixed inset-0 bg-slate-900/50 hidden z-50 flex items-start justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-2xl mt-8 mb-8 relative">
+            <div class="flex justify-between items-center p-6 border-b border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800">Tambah Data Karyawan</h2>
+                <button onclick="closeModalTambah()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-            <button onclick="saveData()" id="btnSimpan" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Simpan Data Lengkap
-            </button>
+            
+            <form id="formTambahKaryawan" onsubmit="submitTambahKaryawan(event)" class="p-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1 md:col-span-2">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Informasi Akun</h3>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Kode Karyawan (Unik & Otomatis) *</label>
+                        <input type="text" id="inputKodeKaryawan" name="code" required readonly class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none">
+                        <p class="text-xs text-slate-500 mt-1">Dibuat otomatis oleh sistem.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap *</label>
+                        <input type="text" name="name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                        <input type="text" name="username" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <input type="text" name="password" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jabatan *</label>
+                        <input type="text" name="position" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Staff, HRD, Bendahara">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Mulai (Start Date)</label>
+                        <input type="date" name="start_date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2 mt-4">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Ketentuan Kerja & Gaji</h3>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jam Kerja/Hari</label>
+                        <input type="number" name="working_hours" value="8" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Target Check In</label>
+                            <input type="time" name="check_in_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Target Check Out</label>
+                            <input type="time" name="check_out_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Gaji Pokok (Base Salary)</label>
+                        <input type="number" name="base_salary" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Bonus Kehadiran</label>
+                        <input type="number" name="attendance_bonus" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Potongan per Absen (Deduction)</label>
+                        <input type="number" name="deduction" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                    <button type="button" onclick="closeModalTambah()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg transition">Batal</button>
+                    <button type="submit" id="btnSubmitKaryawan" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center">
+                        Simpan Karyawan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -113,7 +238,7 @@
         </div>
     </div>
 
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+    <div id="toastContainer" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
         const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
@@ -126,6 +251,7 @@
         let currentData = {}; 
         let currentPeriode = "";
         let expandedNoid = null; 
+        let currentUser = null; // Menyimpan data user yang login
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
 
@@ -134,7 +260,7 @@
             const bgClass = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
             const icon = type === 'success' ? '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
             
-            toast.className = `toast-enter flex items-center p-4 border-l-4 rounded shadow-md ${bgClass}`;
+            toast.className = `toast-enter flex items-center p-4 border-l-4 rounded shadow-md ${bgClass} pointer-events-auto`;
             toast.innerHTML = `${icon} <span>${message}</span>`;
             
             document.getElementById('toastContainer').appendChild(toast);
@@ -155,7 +281,85 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        // ==========================================
+        // LOGIKA LOGIN & LOGOUT
+        // ==========================================
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnLogin');
+            const userIn = document.getElementById('loginUsername').value;
+            const passIn = document.getElementById('loginPassword').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>';
+
+            try {
+                // ILIKE membuat pencarian username tidak case-sensitive
+                const { data, error } = await supabaseClient
+                    .from('employees')
+                    .select('*')
+                    .ilike('username', userIn)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (!data) {
+                    showToast('Username tidak ditemukan', 'error');
+                    return;
+                }
+
+                // Password menggunakan pencarian JavaScript murni sehingga bersifat case-sensitive
+                if (data.password !== passIn) {
+                    showToast('Password salah!', 'error');
+                    return;
+                }
+
+                // Cek Hak Akses Jabatan (HRD atau Bendahara)
+                // Cek Hak Akses Jabatan (Owner, HRD, atau Bendahara)
+const jabatan = (data.position || '').toLowerCase();
+if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
+    showToast('Akses Ditolak! Hanya Owner, HRD, atau Bendahara.', 'error');
+    return;
+}
+
+                // Sukses Login
+                currentUser = data;
+                document.getElementById('userInfo').textContent = `${data.name} (${data.position})`;
+                document.getElementById('loginView').classList.add('hidden');
+                document.getElementById('appView').classList.remove('hidden');
+                
+                showToast(`Selamat datang, ${data.name}!`, 'success');
+                
+                // Inisialisasi Data Aplikasi
+                await initApp();
+
+            } catch (err) {
+                showToast('Gagal terhubung ke database', 'error');
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Masuk';
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('appView').classList.add('hidden');
+            
+            // Bersihkan form
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('bottomBar').classList.add('translate-y-full');
+            
+            showToast('Anda telah keluar.', 'success');
+        }
+
+        // ==========================================
+        // INISIALISASI & TABEL GAJI
+        // ==========================================
+        async function initApp() {
             const today = new Date();
             today.setMonth(today.getMonth() - 1);
             const yyyy = today.getFullYear();
@@ -165,7 +369,7 @@
             document.getElementById('loadingOverlay').classList.remove('hidden');
             await loadKaryawanList();
             await handlePeriodeChange();
-        });
+        }
 
         async function loadKaryawanList() {
             try {
@@ -195,6 +399,9 @@
             }
         }
 
+        // --- Logika Gaji, Render Table, & Input Change Tetap Sama --- 
+        // [Fungsi-fungsi lama disederhanakan tanpa ada perubahan drastis di area UI tabel]
+
         async function handlePeriodeChange() {
             const periode = document.getElementById('periodeInput').value;
             if (!periode) return;
@@ -219,9 +426,7 @@
             }
         }
 
-        function handleKaryawanChange() {
-            processAndRenderData();
-        }
+        function handleKaryawanChange() { processAndRenderData(); }
 
         function toggleAccordion(noid) {
             if (expandedNoid === noid) expandedNoid = null; 
@@ -252,9 +457,6 @@
                 const hasSavedRecord = !!saved;
                 const isLocked = hasSavedRecord && saved.total_gaji !== null;
 
-                // LOGIKA PENGHILANGAN NOL:
-                // Jika belum ada record (data kosong), variabel diset ke string kosong "" (bukan 0) 
-                // agar input HTML terlihat bersih.
                 const kehadiran = hasSavedRecord ? Number(saved.total_kehadiran) : "";
                 const absen = hasSavedRecord ? Number(saved.absen_izin) : "";
                 const lembur = hasSavedRecord ? Number(saved.lembur) : ""; 
@@ -262,7 +464,6 @@
 
                 const gajiPokok = isLocked ? Number(saved.gaji_pokok) : Number(u.gajiPokokBase);
                 
-                // Gunakan 0 fallback untuk kalkulasi matematis agar tidak NaN
                 const calcAbsen = absen === "" ? 0 : absen;
                 const calcLembur = lembur === "" ? 0 : lembur;
                 const calcBonus = bonus === "" ? 0 : bonus;
@@ -276,9 +477,9 @@
                     nama: u.nama,
                     bonusKehadiranBase: Number(u.bonusKehadiranBase) || 0,
                     potonganBase: Number(u.potonganBase) || 0,
-                    kehadiran: kehadiran, // Bisa berupa ""
-                    absen: absen,         // Bisa berupa ""
-                    lembur: lembur,       // Bisa berupa ""
+                    kehadiran: kehadiran,
+                    absen: absen,        
+                    lembur: lembur,      
                     gajiPokok: gajiPokok,
                     bonus: bonus,
                     totalPotongan: totalPotongan,
@@ -412,37 +613,23 @@
             const row = currentData[noid];
             let numericVal;
 
-            // Penanganan khusus untuk field Rupiah (Lembur dan Bonus)
             if (field === 'lembur' || field === 'bonus') {
-                // 1. Hilangkan koma dan semua karakter selain angka
                 let cleanStr = rawVal.replace(/,/g, '').replace(/\D/g, '');
-                
-                // 2. Tentukan nilai aslinya (angka murni)
                 numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
-                
-                // 3. Format kembali string untuk ditampilkan (Ribuan dipisah titik)
                 let formattedVal = cleanStr !== "" ? formatRp(numericVal) : "";
-                
-                // 4. Update nilai input UI secara realtime
                 e.target.value = formattedVal;
-                
-                // Set rawVal dengan nilai format untuk sinkronisasi elemen mobile/desktop
                 rawVal = formattedVal;
             } else {
-                // Input biasa (kehadiran, absen)
                 numericVal = rawVal === "" ? "" : (parseInt(rawVal) || 0);
             }
             
             row[field] = numericVal; 
 
-            // Sinkronisasi input mobile/desktop
             document.querySelectorAll(`input[data-id="${noid}"][data-field="${field}"]`).forEach(el => {
                 if (el !== e.target && el.value !== rawVal) el.value = rawVal;
             });
 
-            // Fallback angka aman untuk kalkulasi (mencegah NaN)
             const numAbsen = row.absen === "" ? 0 : Number(row.absen);
-            const numKehadiran = row.kehadiran === "" ? 0 : Number(row.kehadiran);
             const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
             const numPotonganBase = Number(row.potonganBase) || 0;
             const numGajiPokok = Number(row.gajiPokok) || 0;
@@ -450,7 +637,6 @@
 
             if (field === 'absen') {
                 row.totalPotongan = numPotonganBase * numAbsen;
-                // Update tampilan Total Potongan yang kini berwujud text/span
                 document.querySelectorAll(`.total-potongan-label-${noid}`).forEach(el => {
                     el.textContent = `Rp ${formatRp(row.totalPotongan)}`;
                 });
@@ -462,11 +648,10 @@
             });
         }
 
+
+
         async function saveData() {
-            // FILTER: Hanya ambil data yang lengkap (Hadir dan Absen terisi bukan kosong "")
-            const dataToSave = Object.values(currentData).filter(row => 
-                row.kehadiran !== "" && row.absen !== ""
-            );
+            const dataToSave = Object.values(currentData).filter(row => row.kehadiran !== "" && row.absen !== "");
 
             if (dataToSave.length === 0) {
                 showToast('Tidak ada data yang valid untuk disimpan. Pastikan Hadir dan Absen terisi.', 'error');
@@ -510,6 +695,108 @@
                 handleSupabaseError(err, 'gaji');
             } finally {
                 btn.innerHTML = btnOriginalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // LOGIKA TAMBAH KARYAWAN
+        // ==========================================
+        function openModalTambah() {
+    document.getElementById('modalTambah').classList.remove('hidden');
+    
+    // Generate kode unik dan masukkan ke dalam input secara otomatis
+    const autoCode = generateEmployeeCode();
+    document.getElementById('inputKodeKaryawan').value = autoCode;
+}
+
+        function closeModalTambah() {
+            document.getElementById('modalTambah').classList.add('hidden');
+            document.getElementById('formTambahKaryawan').reset();
+        }
+
+        // Fungsi untuk membuat kode 6 digit unik
+function generateEmployeeCode() {
+    let newCode = "";
+    let isUnique = false;
+    
+    // Looping terus sampai menemukan kode yang benar-benar unik
+    while (!isUnique) {
+        // Generate angka acak antara 100000 hingga 999999
+        newCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Cek apakah kode tersebut sudah ada di array allUsers
+        const isExist = allUsers.some(user => String(user.noid) === newCode);
+        
+        if (!isExist) {
+            isUnique = true; // Jika tidak ada yang sama, hentikan loop
+        }
+    }
+    
+    return newCode;
+}
+
+        async function submitTambahKaryawan(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitKaryawan');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = 'Menyimpan...';
+            btn.disabled = true;
+
+            const fd = new FormData(e.target);
+            const parseNum = (val) => val ? Number(val) : null;
+            const parseStr = (val) => val ? val.trim() : null;
+            
+            // --- TAMBAHKAN KODE VALIDASI INI ---
+    const codeValue = parseStr(fd.get('code'));
+    const codeRegex = /^\d{6}$/; // Memastikan hanya berisi angka dan tepat 6 digit
+    
+    if (!codeRegex.test(codeValue)) {
+        showToast('Gagal: Kode Karyawan harus berisi tepat 6 digit angka!', 'error');
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        return; // Hentikan proses simpan
+    }
+    // -----------------------------------
+    
+            // Pengumpulan data sesuai dengan skema tabel
+            const newEmployeeData = {
+                code: parseStr(fd.get('code')),
+                name: parseStr(fd.get('name')),
+                username: parseStr(fd.get('username')),
+                password: parseStr(fd.get('password')),
+                position: parseStr(fd.get('position')),
+                working_hours: parseNum(fd.get('working_hours')) || 8,
+                start_date: fd.get('start_date') || null,
+                check_in_target: fd.get('check_in_target') || null,
+                check_out_target: fd.get('check_out_target') || null,
+                base_salary: parseNum(fd.get('base_salary')),
+                attendance_bonus: parseNum(fd.get('attendance_bonus')),
+                deduction: parseNum(fd.get('deduction'))
+            };
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('employees')
+                    .insert([newEmployeeData]);
+
+                if (error) throw error;
+
+                showToast('Karyawan berhasil ditambahkan!', 'success');
+                closeModalTambah();
+                
+                // Refresh list karyawan
+                await loadKaryawanList();
+                await handlePeriodeChange(); 
+                
+            } catch (err) {
+                if (err.code === '23505') { // Constraint violation (Duplicate kode unik)
+                    showToast('Gagal: Kode Karyawan sudah terdaftar!', 'error');
+                } else {
+                    handleSupabaseError(err, 'employees');
+                }
+            } finally {
+                btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
         }
