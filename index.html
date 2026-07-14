@@ -221,6 +221,35 @@
         </div>
     </div>
 
+<div id="modalHapus" class="fixed inset-0 bg-slate-900/50 hidden z-[55] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+            <div class="flex items-center mb-4 text-red-600">
+                <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h2 class="text-xl font-bold text-slate-800">Hapus Karyawan</h2>
+            </div>
+            
+            <p class="text-sm text-slate-600 mb-4">
+                Anda yakin ingin menghapus <strong id="hapusNamaKaryawan"></strong> (ID: <span id="hapusIdKaryawan"></span>)? 
+                <br><span class="text-red-500">Peringatan: Tindakan ini tidak dapat dibatalkan.</span>
+            </p>
+            
+            <form id="formHapusKaryawan" onsubmit="submitHapusKaryawan(event)" class="space-y-4">
+                <input type="hidden" id="hapusNoidInput">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Konfirmasi Password Anda</label>
+                    <input type="password" id="hapusPasswordInput" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="Masukkan password Anda">
+                </div>
+                
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModalHapus()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg transition">Batal</button>
+                    <button type="submit" id="btnSubmitHapus" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition flex items-center">
+                        Hapus Permanen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- RLS Modal (Tidak diubah) -->
     <div id="rlsModal" class="fixed inset-0 bg-slate-900/50 hidden z-[60] flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
@@ -325,6 +354,10 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
 
                 // Sukses Login
                 currentUser = data;
+                const sessionData = { ...data };
+                delete sessionData.password;
+                localStorage.setItem('hris_session', JSON.stringify(sessionData));
+                // -----------------------------------------------
                 document.getElementById('userInfo').textContent = `${data.name} (${data.position})`;
                 document.getElementById('loginView').classList.add('hidden');
                 document.getElementById('appView').classList.remove('hidden');
@@ -521,7 +554,12 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                                 <div class="font-medium text-slate-900">${row.nama}</div>
                                 ${badge}
                             </div>
-                            <svg id="chevron-${row.noid}" class="chevron-icon w-5 h-5 text-slate-400 md:hidden transition-transform duration-200 ${expandedNoid === row.noid ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            <div class="flex items-center gap-2">
+                                <button onclick="event.stopPropagation(); openModalHapus('${row.noid}', '${row.nama}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition" title="Hapus Karyawan">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                                <svg id="chevron-${row.noid}" class="chevron-icon w-5 h-5 text-slate-400 md:hidden transition-transform duration-200 ${expandedNoid === row.noid ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
                         </div>
                     </td>
                     <td class="hidden md:table-cell px-2 py-3">
@@ -715,6 +753,36 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
             document.getElementById('formTambahKaryawan').reset();
         }
 
+
+// ==========================================
+// KONTROL SESI (LOCAL STORAGE)
+// ==========================================
+async function checkSession() {
+    const savedSession = localStorage.getItem('hris_session');
+    if (savedSession) {
+        try {
+            currentUser = JSON.parse(savedSession);
+            
+            // Langsung arahkan ke halaman utama
+            document.getElementById('userInfo').textContent = `${currentUser.name} (${currentUser.position})`;
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('appView').classList.remove('hidden');
+            
+            showToast(`Sesi dipulihkan. Selamat datang kembali, ${currentUser.name}!`, 'success');
+            
+            // Inisialisasi Data Aplikasi
+            await initApp();
+        } catch (err) {
+            // Jika data sesi korup, bersihkan sesi
+            localStorage.removeItem('hris_session');
+            console.error('Gagal memulihkan sesi:', err);
+        }
+    }
+}
+
+// Jalankan pengecekan sesi saat halaman web selesai dimuat
+document.addEventListener('DOMContentLoaded', checkSession);        
+
         // Fungsi untuk membuat kode 6 digit unik
 function generateEmployeeCode() {
     let newCode = "";
@@ -795,6 +863,72 @@ function generateEmployeeCode() {
                 } else {
                     handleSupabaseError(err, 'employees');
                 }
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // LOGIKA HAPUS KARYAWAN
+        // ==========================================
+        function openModalHapus(noid, nama) {
+            document.getElementById('hapusIdKaryawan').textContent = noid;
+            document.getElementById('hapusNamaKaryawan').textContent = nama;
+            document.getElementById('hapusNoidInput').value = noid;
+            document.getElementById('hapusPasswordInput').value = '';
+            document.getElementById('modalHapus').classList.remove('hidden');
+        }
+
+        function closeModalHapus() {
+            document.getElementById('modalHapus').classList.add('hidden');
+        }
+
+        async function submitHapusKaryawan(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitHapus');
+            const passInput = document.getElementById('hapusPasswordInput').value;
+            const noid = document.getElementById('hapusNoidInput').value;
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Memverifikasi...';
+            btn.disabled = true;
+
+            try {
+                // 1. Verifikasi Password user yang login langsung ke Database 
+                // (Lebih aman dan menghindari error jika password disembunyikan dari local storage)
+                const { data: userDb, error: authError } = await supabaseClient
+                    .from('employees')
+                    .select('password')
+                    .eq('username', currentUser.username)
+                    .single();
+
+                if (authError || !userDb || userDb.password !== passInput) {
+                    showToast('Gagal: Password yang Anda masukkan salah!', 'error');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    return;
+                }
+
+                btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Menghapus...';
+
+                // 2. Hapus data karyawan jika password benar
+                const { error: deleteError } = await supabaseClient
+                    .from('employees')
+                    .delete()
+                    .eq('code', noid);
+
+                if (deleteError) throw deleteError;
+
+                showToast('Data karyawan berhasil dihapus.', 'success');
+                closeModalHapus();
+                
+                // 3. Refresh seluruh tabel & list dropdown
+                await loadKaryawanList();
+                await handlePeriodeChange();
+
+            } catch (err) {
+                handleSupabaseError(err, 'employees');
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
