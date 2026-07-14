@@ -23,7 +23,7 @@
 <body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
 
     <!-- CONTAINER LOGIN -->
-    <div id="loginView" class="min-h-screen flex items-center justify-center p-4">
+    <div id="loginView" class="min-h-screen flex items-center justify-center ... hidden">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-100">
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
@@ -759,13 +759,14 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
 // ==========================================
 async function checkSession() {
     const savedSession = localStorage.getItem('hris_session');
+    
     if (savedSession) {
         try {
             currentUser = JSON.parse(savedSession);
             
             // Langsung arahkan ke halaman utama
             document.getElementById('userInfo').textContent = `${currentUser.name} (${currentUser.position})`;
-            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('loginView').classList.add('hidden'); // Memastikan tetap sembunyi
             document.getElementById('appView').classList.remove('hidden');
             
             showToast(`Sesi dipulihkan. Selamat datang kembali, ${currentUser.name}!`, 'success');
@@ -773,10 +774,15 @@ async function checkSession() {
             // Inisialisasi Data Aplikasi
             await initApp();
         } catch (err) {
-            // Jika data sesi korup, bersihkan sesi
+            // Jika data sesi korup, bersihkan sesi dan tampilkan login
             localStorage.removeItem('hris_session');
+            document.getElementById('loginView').classList.remove('hidden'); // <--- Tampilkan login jika error
             console.error('Gagal memulihkan sesi:', err);
         }
+    } else {
+        // --- KODE BARU ---
+        // Jika tidak ada sesi yang tersimpan, baru tampilkan halaman login
+        document.getElementById('loginView').classList.remove('hidden');
     }
 }
 
