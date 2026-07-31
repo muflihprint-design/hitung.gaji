@@ -197,20 +197,20 @@
                             <input type="time" name="check_out_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
-                    <!-- Gaji Pokok -->
+                 <!-- Gaji Pokok -->
 <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Gaji Pokok (Base Salary)</label>
-    <input type="text" inputmode="numeric" name="base_salary" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    <input type="text" inputmode="numeric" name="base_salary" onfocus="setInitialCurrencyVal(event)" oninput="formatInputCurrency(event)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
 </div>
 <!-- Bonus Kehadiran -->
 <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Bonus Kehadiran</label>
-    <input type="text" inputmode="numeric" name="attendance_bonus" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    <input type="text" inputmode="numeric" name="attendance_bonus" onfocus="setInitialCurrencyVal(event)" oninput="formatInputCurrency(event)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
 </div>
 <!-- Potongan per Absen -->
 <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Potongan per Absen (Deduction)</label>
-    <input type="text" inputmode="numeric" name="deduction" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    <input type="text" inputmode="numeric" name="deduction" onfocus="setInitialCurrencyVal(event)" oninput="formatInputCurrency(event)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
 </div>
                 </div>
 
@@ -256,7 +256,7 @@
                 </button>
             </div>
             
-            <form id="formEditKaryawan" onsubmit="submitEditKaryawan(event)" class="p-6">
+            <form id="formEditKaryawan" onsubmit="submitEditKaryawan(event)" class="p-6" autocomplete="off">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="col-span-1 md:col-span-2">
                         <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Informasi Akun</h3>
@@ -306,29 +306,33 @@
                             <input type="time" id="editCheckOut" name="check_out_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
-                    <!-- Gaji Pokok -->
+               <!-- Gaji Pokok -->
 <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Gaji Pokok (Base Salary)</label>
-    <input type="text" inputmode="numeric" id="editBaseSalary" name="base_salary" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    <input type="text" inputmode="numeric" id="editBaseSalary" name="base_salary" autocomplete="off" onfocus="setInitialCurrencyVal(event)" oninput="formatInputCurrency(event)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
 </div>
 <!-- Bonus Kehadiran -->
 <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Bonus Kehadiran</label>
-    <input type="text" inputmode="numeric" id="editAttendanceBonus" name="attendance_bonus" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    <input type="text" inputmode="numeric" id="editAttendanceBonus" name="attendance_bonus" autocomplete="off" onfocus="setInitialCurrencyVal(event)" oninput="formatInputCurrency(event)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
 </div>
 <!-- Potongan per Absen -->
 <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Potongan per Absen</label>
-    <input type="text" inputmode="numeric" id="editDeduction" name="deduction" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    <input type="text" inputmode="numeric" id="editDeduction" name="deduction" autocomplete="off" onfocus="setInitialCurrencyVal(event)" oninput="formatInputCurrency(event)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
 </div>
                 </div>
 
                 <!-- Bagian Konfirmasi Password (Khusus Edit) -->
-                <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <label class="block text-sm font-bold text-amber-800 mb-1">Konfirmasi Password Anda</label>
-                    <p class="text-xs text-amber-700 mb-3">Masukkan password akun Anda (Admin/HRD) untuk menyetujui perubahan ini.</p>
-                    <input type="password" id="editAdminPassword" required class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Masukkan password Anda">
-                </div>
+<div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+    <label class="block text-sm font-bold text-amber-800 mb-1">Konfirmasi Password Anda</label>
+    <p class="text-xs text-amber-700 mb-3">Masukkan password akun Anda (Admin/HRD) untuk menyetujui perubahan ini.</p>
+    
+    <!-- Trik umpan untuk mengecoh fitur auto-save browser -->
+    <input type="text" name="dummy_username" style="display:none;" aria-hidden="true" autocomplete="username">
+    
+    <input type="password" id="editAdminPassword" required autocomplete="new-password" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Masukkan password Anda">
+</div>
 
                 <div class="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeModalEdit()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg transition">Batal</button>
@@ -389,7 +393,7 @@
     <div id="toastContainer" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-        const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
+          const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ3N6ZnZtYnB2em5vdHlrcnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzQwMjcsImV4cCI6MjA5OTMxMDAyN30.O0-y9FI_sikkPVig2XNDJ_zlTnfJZv-hRirPurs8yQc';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -404,7 +408,15 @@
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
 
-        
+        // Fungsi untuk merekam nilai numerik saat kursor pertama kali masuk ke input
+function setInitialCurrencyVal(event) {
+    const input = event.target;
+    // Bersihkan dari titik, ambil angka murninya
+    const cleanStr = input.value.replace(/\D/g, '');
+    // Simpan ke dataset
+    input.dataset.prevVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
+}
+
         // LOGIKA OPSI & EDIT KARYAWAN
         // ==========================================
                 // 1. Buka Modal Opsi
@@ -908,47 +920,94 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
         }
 
         function handleInputChange(e) {
-            const noid = e.target.getAttribute('data-id');
-            const field = e.target.getAttribute('data-field');
-            let rawVal = e.target.value;
+    const noid = e.target.getAttribute('data-id');
+    const field = e.target.getAttribute('data-field');
+    let rawVal = e.target.value;
+    
+    const row = currentData[noid];
+    
+    // Simpan nilai numerik sebelumnya untuk mendeteksi penghapusan titik
+    let prevNumericVal = row[field]; 
+    let numericVal;
+
+    if (field === 'lembur' || field === 'bonus') {
+        // 1. Dapatkan posisi kursor saat ini
+        let cursorPosition = e.target.selectionStart;
+        
+        // 2. Hitung ada berapa angka (digit asli) di sebelah kiri kursor sebelum diformat
+        let digitsBeforeCursor = rawVal.substring(0, cursorPosition).replace(/\D/g, '').length;
+
+        // Bersihkan semua karakter selain angka
+        let cleanStr = rawVal.replace(/\D/g, ''); 
+        numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
+
+        // --- KONDISI KHUSUS PENGHAPUSAN (BACKSPACE & DELETE) ---
+        // Jika user menekan Backspace/Delete tapi nilai numerik tidak berubah (artinya yang terhapus HANYA titik)
+        if (e.inputType === 'deleteContentBackward' && numericVal === prevNumericVal && cleanStr.length > 0) {
+            // User menekan Backspace: Hapus 1 angka tepat di kiri kursor
+            cleanStr = cleanStr.substring(0, digitsBeforeCursor - 1) + cleanStr.substring(digitsBeforeCursor);
+            digitsBeforeCursor = Math.max(0, digitsBeforeCursor - 1); // Sesuaikan posisi
+            numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
             
-            const row = currentData[noid];
-            let numericVal;
-
-            if (field === 'lembur' || field === 'bonus') {
-                let cleanStr = rawVal.replace(/,/g, '').replace(/\D/g, '');
-                numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
-                let formattedVal = cleanStr !== "" ? formatRp(numericVal) : "";
-                e.target.value = formattedVal;
-                rawVal = formattedVal;
-            } else {
-                numericVal = rawVal === "" ? "" : (parseInt(rawVal) || 0);
-            }
-            
-            row[field] = numericVal; 
-
-            document.querySelectorAll(`input[data-id="${noid}"][data-field="${field}"]`).forEach(el => {
-                if (el !== e.target && el.value !== rawVal) el.value = rawVal;
-            });
-
-            const numAbsen = row.absen === "" ? 0 : Number(row.absen);
-            const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
-            const numPotonganBase = Number(row.potonganBase) || 0;
-            const numGajiPokok = Number(row.gajiPokok) || 0;
-            const numBonus = Number(row.bonus) || 0;
-
-            if (field === 'absen') {
-                row.totalPotongan = numPotonganBase * numAbsen;
-                document.querySelectorAll(`.total-potongan-label-${noid}`).forEach(el => {
-                    el.textContent = `Rp ${formatRp(row.totalPotongan)}`;
-                });
-            }
-
-            row.totalGaji = numGajiPokok + numLembur + numBonus - (Number(row.totalPotongan) || 0);
-            document.querySelectorAll(`.total-label-${noid}`).forEach(el => {
-                el.textContent = `Rp ${formatRp(row.totalGaji)}`;
-            });
+        } else if (e.inputType === 'deleteContentForward' && numericVal === prevNumericVal && cleanStr.length > 0) {
+            // User menekan Delete: Hapus 1 angka tepat di kanan kursor
+            cleanStr = cleanStr.substring(0, digitsBeforeCursor) + cleanStr.substring(digitsBeforeCursor + 1);
+            numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
         }
+        // --------------------------------------------------------
+
+        let formattedVal = cleanStr !== "" ? formatRp(numericVal) : "";
+        
+        // 3. Timpa nilai input dengan format yang baru
+        e.target.value = formattedVal;
+        rawVal = formattedVal;
+
+        // 4. Cari posisi kursor yang baru berdasarkan letak digit terakhirnya
+        let newCursorPosition = 0;
+        let digitCount = 0;
+        
+        for (let i = 0; i < formattedVal.length; i++) {
+            if (digitCount === digitsBeforeCursor) {
+                break; // Berhenti jika kita sudah melewati jumlah angka yang tepat
+            }
+            // Jika karakter ini adalah angka, tambah perhitungan digit
+            if (/\d/.test(formattedVal[i])) {
+                digitCount++;
+            }
+            newCursorPosition = i + 1;
+        }
+
+        // Kembalikan kursor ke posisi yang benar
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+        
+    } else {
+        numericVal = rawVal === "" ? "" : (parseInt(rawVal) || 0);
+    }
+    
+    row[field] = numericVal; 
+
+    document.querySelectorAll(`input[data-id="${noid}"][data-field="${field}"]`).forEach(el => {
+        if (el !== e.target && el.value !== rawVal) el.value = rawVal;
+    });
+
+    const numAbsen = row.absen === "" ? 0 : Number(row.absen);
+    const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
+    const numPotonganBase = Number(row.potonganBase) || 0;
+    const numGajiPokok = Number(row.gajiPokok) || 0;
+    const numBonus = Number(row.bonus) || 0;
+
+    if (field === 'absen') {
+        row.totalPotongan = numPotonganBase * numAbsen;
+        document.querySelectorAll(`.total-potongan-label-${noid}`).forEach(el => {
+            el.textContent = `Rp ${formatRp(row.totalPotongan)}`;
+        });
+    }
+
+    row.totalGaji = numGajiPokok + numLembur + numBonus - (Number(row.totalPotongan) || 0);
+    document.querySelectorAll(`.total-label-${noid}`).forEach(el => {
+        el.textContent = `Rp ${formatRp(row.totalGaji)}`;
+    });
+}
 
 async function saveData() {
             // Saring data:
@@ -1159,15 +1218,65 @@ const newEmployeeData = {
             document.getElementById('modalHapus').classList.add('hidden');
         }
 
-        // Fungsi pembantu untuk memformat input menjadi currency saat diketik
-function formatInputCurrency(input) {
-    // Hapus semua karakter selain angka
-    let value = input.value.replace(/\D/g, '');
-    if (value !== '') {
-        // Format ke standar Rupiah memanfaatkan formatRp yang sudah ada
-        input.value = formatRp(parseInt(value, 10));
-    } else {
-        input.value = '';
+      
+function formatInputCurrency(eventOrInput) {
+    // 1. Cek apakah parameter berupa Event (dari listener) atau Elemen langsung
+    const isEvent = eventOrInput && eventOrInput.target;
+    const input = isEvent ? eventOrInput.target : eventOrInput;
+    const inputType = isEvent ? eventOrInput.inputType : null;
+
+    let rawVal = input.value;
+    
+    // Dapatkan posisi kursor (gunakan 0 sebagai fallback)
+    let cursorPosition = input.selectionStart || 0;
+    
+    // Hitung digit asli di kiri kursor
+    let digitsBeforeCursor = rawVal.substring(0, cursorPosition).replace(/\D/g, '').length;
+
+    // Bersihkan semua karakter selain angka
+    let cleanStr = rawVal.replace(/\D/g, '');
+    let numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
+
+    // Ambil nilai sebelumnya yang disimpan di dataset input (jika ada)
+    let prevNumericVal = input.dataset.prevVal ? parseInt(input.dataset.prevVal, 10) : "";
+
+    // --- KONDISI KHUSUS PENGHAPUSAN (BACKSPACE & DELETE) ---
+    if (inputType === 'deleteContentBackward' && numericVal === prevNumericVal && cleanStr.length > 0) {
+        // Backspace tepat di sebelah kanan titik pemisah
+        cleanStr = cleanStr.substring(0, digitsBeforeCursor - 1) + cleanStr.substring(digitsBeforeCursor);
+        digitsBeforeCursor = Math.max(0, digitsBeforeCursor - 1); 
+        numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
+        
+    } else if (inputType === 'deleteContentForward' && numericVal === prevNumericVal && cleanStr.length > 0) {
+        // Delete tepat di sebelah kiri titik pemisah
+        cleanStr = cleanStr.substring(0, digitsBeforeCursor) + cleanStr.substring(digitsBeforeCursor + 1);
+        numericVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
+    }
+    // --------------------------------------------------------
+
+    // Format ke standar Rupiah (pastikan fungsi formatRp sudah tersedia)
+    let formattedVal = cleanStr !== "" ? formatRp(numericVal) : "";
+    
+    // Terapkan nilai ke dalam input
+    input.value = formattedVal;
+    
+    // Simpan nilai numerik saat ini ke dalam dataset untuk event berikutnya
+    input.dataset.prevVal = numericVal;
+
+    // Hitung posisi kursor yang baru berdasarkan lompatan angka
+    let newCursorPosition = 0;
+    let digitCount = 0;
+    
+    for (let i = 0; i < formattedVal.length; i++) {
+        if (digitCount === digitsBeforeCursor) break;
+        if (/\d/.test(formattedVal[i])) digitCount++;
+        newCursorPosition = i + 1;
+    }
+
+    // Pastikan kursor hanya di-set jika elemen tersebut sedang aktif/fokus
+    // Ini mencegah error jika fungsi dipanggil saat load halaman pertama kali
+    if (document.activeElement === input) {
+        input.setSelectionRange(newCursorPosition, newCursorPosition);
     }
 }
 
