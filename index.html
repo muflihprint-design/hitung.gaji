@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Hitung Gaji & HRIS</title>
+    <title>Hitung Gaji & HRIS VIP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -56,7 +56,7 @@
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <svg class="w-8 h-8 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span class="font-bold text-xl text-white">Hitung Gaji Pro</span>
+                        <span class="font-bold text-xl text-white">Hitung Gaji VIP</span>
                     </div>
                     <div class="flex items-center space-x-4">
                         <span id="userInfo" class="text-white text-sm opacity-90 hidden sm:block"></span>
@@ -197,24 +197,143 @@
                             <input type="time" name="check_out_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Gaji Pokok (Base Salary)</label>
-                        <input type="number" name="base_salary" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Bonus Kehadiran</label>
-                        <input type="number" name="attendance_bonus" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Potongan per Absen (Deduction)</label>
-                        <input type="number" name="deduction" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
+                    <!-- Gaji Pokok -->
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Gaji Pokok (Base Salary)</label>
+    <input type="text" inputmode="numeric" name="base_salary" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+</div>
+<!-- Bonus Kehadiran -->
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Bonus Kehadiran</label>
+    <input type="text" inputmode="numeric" name="attendance_bonus" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+</div>
+<!-- Potongan per Absen -->
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Potongan per Absen (Deduction)</label>
+    <input type="text" inputmode="numeric" name="deduction" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+</div>
                 </div>
 
                 <div class="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeModalTambah()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg transition">Batal</button>
                     <button type="submit" id="btnSubmitKaryawan" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center">
                         Simpan Karyawan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL OPSI (EDIT / HAPUS) -->
+    <div id="modalOpsi" class="fixed inset-0 bg-slate-900/50 hidden z-[52] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 relative text-center">
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Kelola Karyawan</h2>
+            <p class="text-sm text-slate-600 mb-6">Pilih aksi untuk <strong id="opsiNamaKaryawan"></strong> (ID: <span id="opsiIdKaryawan"></span>)</p>
+            
+            <div class="space-y-3">
+                <button onclick="goToEdit()" class="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg transition flex justify-center items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Edit Data Karyawan
+                </button>
+                <button onclick="goToHapus()" class="w-full px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-lg transition flex justify-center items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus Karyawan
+                </button>
+                <button onclick="closeModalOpsi()" class="w-full px-4 py-2 mt-4 text-slate-500 hover:text-slate-700 font-medium transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT KARYAWAN -->
+    <div id="modalEdit" class="fixed inset-0 bg-slate-900/50 hidden z-[55] flex items-start justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-2xl mt-8 mb-8 relative">
+            <div class="flex justify-between items-center p-6 border-b border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800">Edit Data Karyawan</h2>
+                <button onclick="closeModalEdit()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form id="formEditKaryawan" onsubmit="submitEditKaryawan(event)" class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1 md:col-span-2">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Informasi Akun</h3>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Kode Karyawan (Noid)</label>
+                        <input type="text" id="editKodeKaryawan" name="code" readonly class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none">
+                        <p class="text-xs text-red-500 mt-1">Kode Karyawan (Noid) tidak dapat diedit.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap *</label>
+                        <input type="text" id="editName" name="name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                        <input type="text" id="editUsername" name="username" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <input type="text" id="editPassword" name="password" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jabatan *</label>
+                        <input type="text" id="editPosition" name="position" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Mulai (Start Date)</label>
+                        <input type="date" id="editStartDate" name="start_date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2 mt-4">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Ketentuan Kerja & Gaji</h3>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jam Kerja/Hari</label>
+                        <input type="number" id="editWorkingHours" name="working_hours" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Target Check In</label>
+                            <input type="time" id="editCheckIn" name="check_in_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Target Check Out</label>
+                            <input type="time" id="editCheckOut" name="check_out_target" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                    <!-- Gaji Pokok -->
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Gaji Pokok (Base Salary)</label>
+    <input type="text" inputmode="numeric" id="editBaseSalary" name="base_salary" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+</div>
+<!-- Bonus Kehadiran -->
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Bonus Kehadiran</label>
+    <input type="text" inputmode="numeric" id="editAttendanceBonus" name="attendance_bonus" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+</div>
+<!-- Potongan per Absen -->
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Potongan per Absen</label>
+    <input type="text" inputmode="numeric" id="editDeduction" name="deduction" oninput="formatInputCurrency(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+</div>
+                </div>
+
+                <!-- Bagian Konfirmasi Password (Khusus Edit) -->
+                <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <label class="block text-sm font-bold text-amber-800 mb-1">Konfirmasi Password Anda</label>
+                    <p class="text-xs text-amber-700 mb-3">Masukkan password akun Anda (Admin/HRD) untuk menyetujui perubahan ini.</p>
+                    <input type="password" id="editAdminPassword" required class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Masukkan password Anda">
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                    <button type="button" onclick="closeModalEdit()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg transition">Batal</button>
+                    <button type="submit" id="btnSubmitEdit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center">
+                        Simpan Perubahan
                     </button>
                 </div>
             </form>
@@ -281,8 +400,153 @@
         let currentPeriode = "";
         let expandedNoid = null; 
         let currentUser = null; // Menyimpan data user yang login
+        let selectedEmployeeInfo = { noid: null, nama: null };
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
+
+        
+        // LOGIKA OPSI & EDIT KARYAWAN
+        // ==========================================
+                // 1. Buka Modal Opsi
+        function openModalOpsi(noid, nama) {
+            selectedEmployeeInfo = { noid, nama };
+            document.getElementById('opsiIdKaryawan').textContent = noid;
+            document.getElementById('opsiNamaKaryawan').textContent = nama;
+            document.getElementById('modalOpsi').classList.remove('hidden');
+        }
+
+        // 2. Tutup Modal Opsi
+        function closeModalOpsi() {
+            document.getElementById('modalOpsi').classList.add('hidden');
+        }
+
+        // 3. Lanjut ke Modal Hapus (Meneruskan dari Opsi)
+        function goToHapus() {
+            closeModalOpsi();
+            openModalHapus(selectedEmployeeInfo.noid, selectedEmployeeInfo.nama);
+        }
+
+        // 4. Lanjut ke Modal Edit (Meneruskan dari Opsi dan Ambil Data Terbaru)
+        async function goToEdit() {
+            closeModalOpsi();
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
+            try {
+                // Tarik data spesifik karyawan dari Supabase berdasarkan noid (code)
+                const { data, error } = await supabaseClient
+                    .from('employees')
+                    .select('*')
+                    .eq('code', selectedEmployeeInfo.noid)
+                    .single();
+
+                if (error) throw error;
+
+                // Masukkan data ke dalam form modal edit
+                document.getElementById('editKodeKaryawan').value = data.code;
+                document.getElementById('editName').value = data.name || '';
+                document.getElementById('editUsername').value = data.username || '';
+                document.getElementById('editPassword').value = data.password || '';
+                document.getElementById('editPosition').value = data.position || '';
+                document.getElementById('editWorkingHours').value = data.working_hours || 8;
+                document.getElementById('editStartDate').value = data.start_date || '';
+                document.getElementById('editCheckIn').value = data.check_in_target || '';
+                document.getElementById('editCheckOut').value = data.check_out_target || '';
+                document.getElementById('editBaseSalary').value = data.base_salary ? formatRp(data.base_salary) : '';
+document.getElementById('editAttendanceBonus').value = data.attendance_bonus ? formatRp(data.attendance_bonus) : '';
+document.getElementById('editDeduction').value = data.deduction ? formatRp(data.deduction) : '';
+                
+                // Kosongkan kolom konfirmasi password admin
+                document.getElementById('editAdminPassword').value = '';
+
+                // Buka modal edit
+                document.getElementById('modalEdit').classList.remove('hidden');
+                
+            } catch (err) {
+                showToast('Gagal menarik data karyawan', 'error');
+                console.error(err);
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        // 5. Tutup Modal Edit
+        function closeModalEdit() {
+            document.getElementById('modalEdit').classList.add('hidden');
+            document.getElementById('formEditKaryawan').reset();
+        }
+
+        // 6. Submit Update Data Edit
+        async function submitEditKaryawan(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitEdit');
+            const originalHtml = btn.innerHTML;
+            
+            const adminPassInput = document.getElementById('editAdminPassword').value;
+            const noid = document.getElementById('editKodeKaryawan').value;
+
+            btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Memverifikasi...';
+            btn.disabled = true;
+
+            try {
+                // Validasi Password Pengguna yang Sedang Login
+                const { data: userDb, error: authError } = await supabaseClient
+                    .from('employees')
+                    .select('password')
+                    .eq('username', currentUser.username)
+                    .single();
+
+                if (authError || !userDb || userDb.password !== adminPassInput) {
+                    showToast('Gagal: Password admin yang Anda masukkan salah!', 'error');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    return;
+                }
+
+                btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Menyimpan...';
+
+                // Parsing Form
+                const fd = new FormData(e.target);
+                const parseNum = (val) => val ? Number(val) : null;
+                const parseStr = (val) => val ? val.trim() : null;
+
+                // Siapkan JSON tanpa mengirim 'code' agar tidak ter-edit
+                // Ganti parseNum menjadi parseCurrency
+const updatedData = {
+    name: parseStr(fd.get('name')),
+    username: parseStr(fd.get('username')),
+    password: parseStr(fd.get('password')),
+    position: parseStr(fd.get('position')),
+    working_hours: parseNum(fd.get('working_hours')) || 8,
+    start_date: fd.get('start_date') || null,
+    check_in_target: fd.get('check_in_target') || null,
+    check_out_target: fd.get('check_out_target') || null,
+    base_salary: parseCurrency(fd.get('base_salary')), // PERUBAHAN DI SINI
+    attendance_bonus: parseCurrency(fd.get('attendance_bonus')), // PERUBAHAN DI SINI
+    deduction: parseCurrency(fd.get('deduction')) // PERUBAHAN DI SINI
+};
+
+                // Proses UPDATE ke Supabase
+                const { error: updateError } = await supabaseClient
+                    .from('employees')
+                    .update(updatedData)
+                    .eq('code', noid);
+
+                if (updateError) throw updateError;
+
+                showToast('Data karyawan berhasil diperbarui!', 'success');
+                closeModalEdit();
+                
+                // Refresh data di tabel
+                await loadKaryawanList();
+                await handlePeriodeChange();
+
+            } catch (err) {
+                handleSupabaseError(err, 'employees');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -555,9 +819,9 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                                 ${badge}
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="event.stopPropagation(); openModalHapus('${row.noid}', '${row.nama}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition" title="Hapus Karyawan">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
+                                <button type="button" onclick="event.stopPropagation(); openModalOpsi('${row.noid}', '${row.nama}')" class="text-slate-500 hover:bg-slate-200 hover:text-slate-800 p-1.5 rounded-lg transition" title="Opsi Karyawan">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+</button>
                                 <svg id="chevron-${row.noid}" class="chevron-icon w-5 h-5 text-slate-400 md:hidden transition-transform duration-200 ${expandedNoid === row.noid ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                             </div>
                         </div>
@@ -838,20 +1102,21 @@ function generateEmployeeCode() {
     // -----------------------------------
     
             // Pengumpulan data sesuai dengan skema tabel
-            const newEmployeeData = {
-                code: parseStr(fd.get('code')),
-                name: parseStr(fd.get('name')),
-                username: parseStr(fd.get('username')),
-                password: parseStr(fd.get('password')),
-                position: parseStr(fd.get('position')),
-                working_hours: parseNum(fd.get('working_hours')) || 8,
-                start_date: fd.get('start_date') || null,
-                check_in_target: fd.get('check_in_target') || null,
-                check_out_target: fd.get('check_out_target') || null,
-                base_salary: parseNum(fd.get('base_salary')),
-                attendance_bonus: parseNum(fd.get('attendance_bonus')),
-                deduction: parseNum(fd.get('deduction'))
-            };
+            // Ganti parseNum menjadi parseCurrency untuk bagian gaji, bonus, dan potongan
+const newEmployeeData = {
+    code: parseStr(fd.get('code')),
+    name: parseStr(fd.get('name')),
+    username: parseStr(fd.get('username')),
+    password: parseStr(fd.get('password')),
+    position: parseStr(fd.get('position')),
+    working_hours: parseNum(fd.get('working_hours')) || 8,
+    start_date: fd.get('start_date') || null,
+    check_in_target: fd.get('check_in_target') || null,
+    check_out_target: fd.get('check_out_target') || null,
+    base_salary: parseCurrency(fd.get('base_salary')), // PERUBAHAN DI SINI
+    attendance_bonus: parseCurrency(fd.get('attendance_bonus')), // PERUBAHAN DI SINI
+    deduction: parseCurrency(fd.get('deduction')) // PERUBAHAN DI SINI
+};
 
             try {
                 const { data, error } = await supabaseClient
@@ -893,6 +1158,25 @@ function generateEmployeeCode() {
         function closeModalHapus() {
             document.getElementById('modalHapus').classList.add('hidden');
         }
+
+        // Fungsi pembantu untuk memformat input menjadi currency saat diketik
+function formatInputCurrency(input) {
+    // Hapus semua karakter selain angka
+    let value = input.value.replace(/\D/g, '');
+    if (value !== '') {
+        // Format ke standar Rupiah memanfaatkan formatRp yang sudah ada
+        input.value = formatRp(parseInt(value, 10));
+    } else {
+        input.value = '';
+    }
+}
+
+// Fungsi pembantu untuk mengembalikan input currency menjadi angka murni ke database
+const parseCurrency = (val) => {
+    if (!val) return null;
+    const cleanStr = val.toString().replace(/\D/g, '');
+    return cleanStr ? Number(cleanStr) : null;
+};
 
         async function submitHapusKaryawan(e) {
             e.preventDefault();
