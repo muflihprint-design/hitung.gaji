@@ -6,6 +6,8 @@
     <title>Hitung Gaji & HRIS VIP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         /* Menyembunyikan spinner pada input number */
         input[type="number"]::-webkit-inner-spin-button, 
@@ -87,6 +89,24 @@
                 </div>
             </div>
 
+           <!-- WIDGET TOTAL GAJI & TOMBOL PDF -->
+            <div class="bg-blue-600 rounded-xl shadow-md border border-blue-700 p-6 mb-6 flex flex-col md:flex-row justify-between items-center text-white gap-4">
+                <div class="text-center md:text-left">
+                    <h3 class="text-base md:text-lg font-medium text-blue-100 uppercase tracking-wider">
+                        Total Gaji Periode <span id="labelPeriodeKeseluruhan" class="font-bold text-white">-</span>
+                    </h3>
+                    <div class="text-3xl md:text-4xl font-bold mt-2" id="summaryTotalGaji">
+                        Rp 0
+                    </div>
+                </div>
+                <div>
+                    <button onclick="downloadPDF()" class="bg-white/20 hover:bg-white/30 text-white border border-white/30 px-5 py-2.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[300px]">
                 <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -97,6 +117,10 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
+                                <!-- Kolom Checkbox -->
+                                <th class="px-4 py-3 font-semibold w-12 text-center">
+                                    <input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
+                                </th>
                                 <th class="px-4 py-3 font-semibold w-16">NoID</th>
                                 <th class="px-4 py-3 font-semibold min-w-[150px]">Nama</th>
                                 <th class="hidden md:table-cell px-4 py-3 font-semibold w-24 text-center">Hadir</th>
@@ -111,7 +135,8 @@
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
                             <tr>
-                                <td colspan="10" class="px-4 py-12 text-center text-slate-500">
+                                <!-- Colspan diubah dari 10 menjadi 11 karena ada tambahan kolom -->
+                                <td colspan="11" class="px-4 py-12 text-center text-slate-500">
                                     Pilih periode penggajian untuk memuat data.
                                 </td>
                             </tr>
@@ -122,15 +147,23 @@
         </main>
 
         <div id="bottomBar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 transform translate-y-full transition-transform duration-300 z-40">
-            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-                <div>
-                    <p class="text-sm text-slate-500">Menyimpan ke periode:</p>
+            <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="w-full sm:w-auto text-center sm:text-left">
+                    <p class="text-sm text-slate-500">Status Periode:</p>
                     <p id="savePeriodeLabel" class="font-bold text-slate-800">-</p>
                 </div>
-                <button onclick="saveData()" id="btnSimpan" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    Simpan Data Lengkap
-                </button>
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <!-- Tombol Simpan Sementara -->
+                    <button onclick="saveData()" id="btnSimpan" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg transition shadow-sm flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        Simpan Sementara
+                    </button>
+                    <!-- Tombol Terbitkan (Permanen) -->
+                    <button onclick="terbitkanData()" id="btnTerbitkan" class="flex-1 sm:flex-none px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Terbitkan
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -263,22 +296,21 @@
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Kode Karyawan (Noid)</label>
-                        <input type="text" id="editKodeKaryawan" name="code" readonly class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none">
-                        <p class="text-xs text-red-500 mt-1">Kode Karyawan (Noid) tidak dapat diedit.</p>
-                    </div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Kode Karyawan (Noid)</label>
+    <input type="text" id="editKodeKaryawan" name="code" readonly class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none">
+</div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap *</label>
                         <input type="text" id="editName" name="name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                        <input type="text" id="editUsername" name="username" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                        <input type="text" id="editPassword" name="password" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+    <input type="text" id="editUsername" name="username" readonly class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none">
+</div>
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+    <input type="text" id="editPassword" name="password" readonly class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed focus:outline-none">
+</div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Jabatan *</label>
                         <input type="text" id="editPosition" name="position" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
@@ -393,9 +425,9 @@
     <div id="toastContainer" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-          const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
+        const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ3N6ZnZtYnB2em5vdHlrcnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzQwMjcsImV4cCI6MjA5OTMxMDAyN30.O0-y9FI_sikkPVig2XNDJ_zlTnfJZv-hRirPurs8yQc';
-        
+         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let allUsers = []; 
@@ -405,6 +437,7 @@
         let expandedNoid = null; 
         let currentUser = null; // Menyimpan data user yang login
         let selectedEmployeeInfo = { noid: null, nama: null };
+        let cachedDraft = []; // Menampung data gaji_edit
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
 
@@ -417,6 +450,133 @@ function setInitialCurrencyVal(event) {
     input.dataset.prevVal = cleanStr === "" ? "" : parseInt(cleanStr, 10);
 }
 
+function updateTotalGajiKeseluruhan() {
+            let total = 0;
+            // Menjumlahkan seluruh total gaji dari data yang sedang aktif/ditampilkan
+            Object.values(currentData).forEach(row => {
+                total += (Number(row.totalGaji) || 0);
+            });
+            
+            const summaryEl = document.getElementById('summaryTotalGaji');
+            if (summaryEl) {
+                summaryEl.textContent = `Rp ${formatRp(total)}`;
+            }
+        }
+
+        // ==========================================
+        // FITUR DOWNLOAD PDF (PORTRAIT - RINCIAN KE BAWAH)
+        // ==========================================
+        function downloadPDF() {
+            // Cek apakah ada data yang bisa di-print
+            if (Object.keys(currentData).length === 0) {
+                showToast('Tidak ada data gaji untuk di-download!', 'error');
+                return;
+            }
+
+            // Inisialisasi jsPDF (Portrait, satuan pt, ukuran A4)
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'a4'); // 'p' = portrait
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            let startY = 50;
+
+            // Header Laporan
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(15, 23, 42); // slate-900
+            doc.text('Laporan Rincian Gaji Karyawan VIP', pageWidth / 2, startY, { align: 'center' });
+            
+            startY += 20;
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(71, 85, 105); // slate-600
+            doc.text(`Periode: ${currentPeriode}`, pageWidth / 2, startY, { align: 'center' });
+            
+            startY += 15;
+            const totalGajiText = document.getElementById('summaryTotalGaji').innerText;
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(29, 78, 216); // blue-700
+            doc.text(`Grand Total: ${totalGajiText}`, pageWidth / 2, startY, { align: 'center' });
+
+            startY += 30; // Jarak sebelum masuk ke rincian karyawan
+
+            // Loop untuk setiap karyawan
+            Object.values(currentData).forEach((row, index) => {
+                // Pindah ke halaman baru jika sisa ruang di bawah kurang dari 180pt
+                if (startY > pageHeight - 180) {
+                    doc.addPage();
+                    startY = 50;
+                }
+
+                // Kotak Background Judul Karyawan
+                doc.setFillColor(241, 245, 249); // Warna slate-100
+                doc.rect(40, startY, pageWidth - 80, 22, 'F');
+                
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(15, 23, 42); 
+                doc.text(`${index + 1}. ${row.nama} (ID: ${row.noid})`, 48, startY + 15);
+
+                startY += 40; // Turun ke area rincian
+
+                // Koordinat Kolom Kiri & Kanan
+                const leftX = 50;
+                const leftValX = 140; // Titik sejajar titik dua ( : )
+                const rightX = 320;
+                const rightValX = 410; // Titik sejajar titik dua kanan ( : )
+                
+                doc.setFontSize(10);
+
+                // Baris 1: Kehadiran & Absen
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(71, 85, 105); // slate-600
+                doc.text('Kehadiran', leftX, startY);
+                doc.text(`: ${row.kehadiran || "0"} Hari`, leftValX, startY);
+                
+                doc.text('Absen/Izin', rightX, startY);
+                doc.text(`: ${row.absen || "0"} Hari`, rightValX, startY);
+
+                startY += 20;
+
+                // Baris 2: Gaji Pokok & Bonus
+                doc.text('Gaji Pokok', leftX, startY);
+                doc.text(`: Rp ${formatRp(row.gajiPokok)}`, leftValX, startY);
+                
+                doc.text('Bonus', rightX, startY);
+                doc.text(`: Rp ${formatRp(row.bonus)}`, rightValX, startY);
+
+                startY += 20;
+
+                // Baris 3: Lembur & Potongan
+                doc.text('Lembur', leftX, startY);
+                doc.text(`: Rp ${formatRp(row.lembur)}`, leftValX, startY);
+                
+                doc.setTextColor(220, 38, 38); // text-red-600 untuk potongan
+                doc.text('Total Potongan', rightX, startY);
+                doc.text(`: Rp ${formatRp(row.totalPotongan)}`, rightValX, startY);
+
+                startY += 25;
+
+                // Baris 4: Total Gaji Diterima
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(29, 78, 216); // text-blue-700
+                doc.text('TOTAL DITERIMA', leftX, startY);
+                doc.text(`: Rp ${formatRp(row.totalGaji)}`, leftValX, startY);
+
+                // Garis pembatas antar karyawan
+                startY += 20;
+                doc.setDrawColor(226, 232, 240); // Garis abu-abu muda (slate-200)
+                doc.setLineWidth(1);
+                doc.line(40, startY, pageWidth - 40, startY);
+
+                startY += 20; // Jarak sebelum data karyawan berikutnya
+            });
+
+            // Simpan File PDF
+            doc.save(`Rincian_Gaji_VIP_${currentPeriode}.pdf`);
+            showToast('Rincian PDF berhasil diunduh!', 'success');
+        }
         // LOGIKA OPSI & EDIT KARYAWAN
         // ==========================================
                 // 1. Buka Modal Opsi
@@ -683,9 +843,10 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
         async function loadKaryawanList() {
             try {
                 const { data, error } = await supabaseClient
-                    .from('employees')
-                    .select('code, name, base_salary, attendance_bonus, deduction')
-                    .order('code', { ascending: true });
+    .from('employees')
+    .select('code, name, base_salary, attendance_bonus, deduction')
+    .neq('position', 'Tidak Aktif') // Memfilter agar karyawan yang Tidak Aktif tidak dimuat
+    .order('code', { ascending: true });
 
                 if (error) throw error;
                 
@@ -711,7 +872,7 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
         // --- Logika Gaji, Render Table, & Input Change Tetap Sama --- 
         // [Fungsi-fungsi lama disederhanakan tanpa ada perubahan drastis di area UI tabel]
 
-        async function handlePeriodeChange() {
+       async function handlePeriodeChange() {
             const periode = document.getElementById('periodeInput').value;
             if (!periode) return;
 
@@ -719,14 +880,22 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             
             try {
-                const { data, error } = await supabaseClient
-                    .from('gaji')
-                    .select('*')
-                    .eq('periode', periode);
+                // Tarik data bersamaan dari tabel permanen dan sementara
+                const [resGaji, resDraft] = await Promise.all([
+                    supabaseClient.from('gaji').select('*').eq('periode', periode),
+                    supabaseClient.from('gaji_edit').select('*').eq('periode', periode)
+                ]);
                 
-                if (error) throw error;
-                cachedPayroll = data || []; 
+                if (resGaji.error) throw resGaji.error;
+                if (resDraft.error) throw resDraft.error;
+
+                cachedPayroll = resGaji.data || []; 
+                cachedDraft = resDraft.data || []; 
                 
+                // Uncheck "Pilih Semua" saat memuat ulang periode
+                const checkAllEl = document.getElementById('checkAll');
+                if(checkAllEl) checkAllEl.checked = false;
+
                 processAndRenderData();
             } catch (err) {
                 handleSupabaseError(err, 'gaji');
@@ -758,30 +927,39 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
             
             const pastDataMap = {};
             cachedPayroll.forEach(p => pastDataMap[p.noid] = p);
+            
+            const draftDataMap = {};
+            cachedDraft.forEach(d => draftDataMap[d.noid] = d);
 
             currentData = {}; 
 
             usersToDisplay.forEach(u => {
                 const saved = pastDataMap[u.noid];
+                const draft = draftDataMap[u.noid];
+
                 const hasSavedRecord = !!saved;
                 const isLocked = hasSavedRecord && saved.total_gaji !== null;
+                const isDraft = !isLocked && !!draft; // Jika tidak terkunci tapi ada di gaji_edit
 
-                const kehadiran = hasSavedRecord ? Number(saved.total_kehadiran) : "";
-                const absen = hasSavedRecord ? Number(saved.absen_izin) : "";
-                const lembur = hasSavedRecord ? Number(saved.lembur) : ""; 
-                const bonus = hasSavedRecord ? Number(saved.bonus) : "";
+                // Prioritaskan sumber data: Locked -> Draft -> Base Value
+                const source = isLocked ? saved : (isDraft ? draft : null);
 
-                const gajiPokok = isLocked ? Number(saved.gaji_pokok) : Number(u.gajiPokokBase);
+                const kehadiran = source ? Number(source.total_kehadiran) : "";
+                const absen = source ? Number(source.absen_izin) : "";
+                const lembur = source ? Number(source.lembur) : ""; 
+                const bonus = source ? Number(source.bonus) : "";
+
+                const gajiPokok = source ? Number(source.gaji_pokok) : Number(u.gajiPokokBase);
                 
                 const calcAbsen = absen === "" ? 0 : absen;
                 const calcLembur = lembur === "" ? 0 : lembur;
                 const calcBonus = bonus === "" ? 0 : bonus;
                 
-                const totalPotongan = isLocked ? Number(saved.potongan) : (Number(u.potonganBase) * calcAbsen);
-                const totalGaji = isLocked ? Number(saved.total_gaji) : (gajiPokok + calcLembur + calcBonus - totalPotongan);
+                const totalPotongan = source ? Number(source.potongan) : (Number(u.potonganBase) * calcAbsen);
+                const totalGaji = source ? Number(source.total_gaji) : (gajiPokok + calcLembur + calcBonus - totalPotongan);
 
                 currentData[u.noid] = {
-                    id: hasSavedRecord ? saved.id : null, 
+                    id: source ? source.id : null, 
                     noid: u.noid,
                     nama: u.nama,
                     bonusKehadiranBase: Number(u.bonusKehadiranBase) || 0,
@@ -793,13 +971,21 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                     bonus: bonus,
                     totalPotongan: totalPotongan,
                     totalGaji: totalGaji,
-                    isLocked: isLocked
+                    isLocked: isLocked,
+                    isDraft: isDraft
                 };
             });
 
             renderTable();
             document.getElementById('savePeriodeLabel').textContent = currentPeriode;
             document.getElementById('bottomBar').classList.remove('translate-y-full');
+        }
+
+        function toggleCheckAll(source) {
+            const checkboxes = document.querySelectorAll('.row-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => {
+                cb.checked = source.checked;
+            });
         }
 
         function renderTable() {
@@ -814,7 +1000,9 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                 const inputCls = `${baseInputCls} ${row.isLocked ? lockedCls : activeCls}`;
                 
                 const badge = row.isLocked 
-                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 mt-1 border border-green-200">Terkunci</span>`
+                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 mt-1 border border-green-200">Terbit</span>`
+                    : row.isDraft
+                    ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 mt-1 border border-amber-200">Draft</span>`
                     : '';
 
                 // Baris Utama
@@ -823,6 +1011,9 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                 tr.onclick = () => { if(window.innerWidth < 768) toggleAccordion(row.noid); };
                 
                 tr.innerHTML = `
+                <td class="px-4 py-3 text-center border-b border-slate-100 md:border-none" onclick="event.stopPropagation()">
+                        <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50" value="${row.noid}" ${row.isLocked ? 'disabled' : ''}>
+                    </td>
                     <td class="px-4 py-3 text-slate-700">${row.noid}</td>
                     <td class="px-4 py-3">
                         <div class="flex justify-between items-center">
@@ -870,7 +1061,7 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                 trDetail.id = `detail-${row.noid}`;
                 trDetail.className = `detail-row ${expandedNoid === row.noid ? '' : 'hidden'} md:hidden bg-slate-100/60 shadow-inner border-b border-slate-200`;
                 trDetail.innerHTML = `
-                    <td colspan="10" class="px-4 py-4">
+                    <td colspan="11" class="px-4 py-4">
                         <div class="flex flex-col gap-3">
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
@@ -917,6 +1108,7 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
             document.querySelectorAll('.table-input:not([readonly])').forEach(input => {
                 input.addEventListener('input', handleInputChange);
             });
+            updateTotalGajiKeseluruhan();
         }
 
         function handleInputChange(e) {
@@ -1007,31 +1199,27 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
     document.querySelectorAll(`.total-label-${noid}`).forEach(el => {
         el.textContent = `Rp ${formatRp(row.totalGaji)}`;
     });
+    updateTotalGajiKeseluruhan();
 }
 
 async function saveData() {
-            // Saring data:
-            // 1. Kehadiran harus terisi
-            // 2. Absen harus terisi
-            // 3. !row.isLocked -> pastikan status datanya TIDAK terkunci
+            // SIMPAN SEMENTARA (Ke tabel gaji_edit)
             const dataToSave = Object.values(currentData).filter(row => 
                 row.kehadiran !== "" && 
                 row.absen !== "" && 
-                !row.isLocked
+                !row.isLocked // Hanya data yang belum terbit
             );
 
-            // Jika semua data sudah terkunci atau kosong, hentikan proses
             if (dataToSave.length === 0) {
-                showToast('Tidak ada data baru untuk disimpan. Data mungkin masih kosong atau semuanya sudah terkunci.', 'error');
+                showToast('Tidak ada data yang perlu disimpan sementara.', 'error');
                 return;
             }
 
             const btn = document.getElementById('btnSimpan');
             const btnOriginalHtml = btn.innerHTML;
-            btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Menyimpan...';
+            btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 mr-2"></div> Menyimpan...';
             btn.disabled = true;
 
-            // Memetakan data yang lolos saringan (hanya data baru)
             const dataToInsert = dataToSave.map(row => ({
                 noid: row.noid,
                 nama: row.nama,
@@ -1044,26 +1232,98 @@ async function saveData() {
                 potongan: Number(row.totalPotongan) || 0,
                 total_gaji: Number(row.totalGaji) || 0
             }));
+            
+            const noidsToSave = dataToInsert.map(d => d.noid);
 
             try {
-                // Simpan HANYA data yang belum terkunci
+                // Hapus draft lama untuk menghindari duplikat error
+                await supabaseClient.from('gaji_edit')
+                    .delete()
+                    .in('noid', noidsToSave)
+                    .eq('periode', currentPeriode);
+                
+                // Masukkan data draft baru
                 const { error: insertError } = await supabaseClient
-                    .from('gaji')
+                    .from('gaji_edit')
                     .insert(dataToInsert);
                 
                 if (insertError) throw insertError;
                 
-                showToast(`Berhasil menyimpan ${dataToSave.length} data gaji baru!`, 'success');
+                showToast(`Berhasil menyimpan ${dataToSave.length} data ke Draft Sementara!`, 'success');
                 await handlePeriodeChange();
 
             } catch (err) {
-                handleSupabaseError(err, 'gaji');
+                handleSupabaseError(err, 'gaji_edit');
             } finally {
                 btn.innerHTML = btnOriginalHtml;
                 btn.disabled = false;
             }
         }
-        
+
+        async function terbitkanData() {
+            // TERBITKAN (Pindah ke tabel gaji permanen)
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                showToast('Pilih minimal satu karyawan (centang) untuk diterbitkan!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnTerbitkan');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Proses...';
+            btn.disabled = true;
+
+            const selectedNoids = Array.from(checkedBoxes).map(cb => cb.value);
+            const dataToPublish = [];
+
+            // Susun data yang dicentang
+            selectedNoids.forEach(noid => {
+                const row = currentData[noid];
+                if (row && row.kehadiran !== "" && row.absen !== "") {
+                    dataToPublish.push({
+                        noid: row.noid,
+                        nama: row.nama,
+                        periode: currentPeriode,
+                        total_kehadiran: Number(row.kehadiran) || 0,
+                        absen_izin: Number(row.absen) || 0,
+                        gaji_pokok: Number(row.gajiPokok) || 0,
+                        lembur: Number(row.lembur) || 0,
+                        bonus: Number(row.bonus) || 0,
+                        potongan: Number(row.totalPotongan) || 0,
+                        total_gaji: Number(row.totalGaji) || 0
+                    });
+                }
+            });
+
+            if (dataToPublish.length === 0) {
+                showToast('Gagal: Pastikan data yang dicentang sudah diisi (Hadir/Absen).', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                // 1. Simpan (Lock) ke tabel permanen `gaji`
+                const { error: insertError } = await supabaseClient.from('gaji').insert(dataToPublish);
+                if (insertError) throw insertError;
+
+                // 2. Bersihkan jejaknya di tabel sementara `gaji_edit`
+                await supabaseClient.from('gaji_edit')
+                    .delete()
+                    .in('noid', selectedNoids)
+                    .eq('periode', currentPeriode);
+                
+                showToast(`Berhasil menerbitkan ${dataToPublish.length} data gaji secara permanen!`, 'success');
+                
+                await handlePeriodeChange(); // Refresh tampilan menjadi status Terkunci
+                
+            } catch (err) {
+                handleSupabaseError(err, 'gaji');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }     
         // ==========================================
         // LOGIKA TAMBAH KARYAWAN
         // ==========================================
@@ -1315,13 +1575,17 @@ const parseCurrency = (val) => {
 
                 btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Menghapus...';
 
-                // 2. Hapus data karyawan jika password benar
-                const { error: deleteError } = await supabaseClient
-                    .from('employees')
-                    .delete()
-                    .eq('code', noid);
+                // 2. Ubah status karyawan menjadi Tidak Aktif jika password benar (Soft Delete)
+const { error: updateError } = await supabaseClient
+    .from('employees')
+    .update({ 
+        position: 'Tidak Aktif', 
+        check_in_target: null, 
+        check_out_target: null 
+    })
+    .eq('code', noid);
 
-                if (deleteError) throw deleteError;
+if (updateError) throw updateError;
 
                 showToast('Data karyawan berhasil dihapus.', 'success');
                 closeModalHapus();
