@@ -437,7 +437,7 @@
     <div id="toastContainer" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-        const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
+   const SUPABASE_URL = 'https://tigszfvmbpvznotykryx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ3N6ZnZtYnB2em5vdHlrcnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzQwMjcsImV4cCI6MjA5OTMxMDAyN30.O0-y9FI_sikkPVig2XNDJ_zlTnfJZv-hRirPurs8yQc';
          
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -720,9 +720,41 @@ const updatedData = {
                 showToast('Data karyawan berhasil diperbarui!', 'success');
                 closeModalEdit();
                 
-                // Refresh data di tabel
                 await loadKaryawanList();
-                await handlePeriodeChange();
+                
+                // 2. Update state `currentData` secara langsung TANPA menarik data dari gaji_edit
+                // agar inputan Hadir/Absen yang belum disave di tabel tidak hilang.
+                if (currentData[noid] && !currentData[noid].isLocked) {
+                    const updatedUser = allUsers.find(u => u.noid === noid);
+                    if (updatedUser) {
+                        const row = currentData[noid];
+                        
+                        // Timpa dengan Gaji Pokok & Bonus Base yang baru diedit
+                        row.gajiPokok = Number(updatedUser.gajiPokokBase);
+                        row.bonusKehadiranBase = Number(updatedUser.bonusKehadiranBase);
+                        
+                        // Ambil nilai yang saat ini sedang diketik di tabel
+                        const numKehadiran = row.kehadiran === "" ? 0 : Number(row.kehadiran);
+                        const numAbsen = row.absen === "" ? 0 : Number(row.absen);
+                        const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
+                        const numBonus = row.bonus === "" ? 0 : Number(row.bonus);
+                        
+                        // Hitung ulang Potongan secara real-time
+                        const totalHari = numKehadiran + numAbsen;
+                        if (totalHari > 0) {
+                            row.potonganBase = Math.floor((row.gajiPokok / totalHari) / 100) * 100;
+                        } else {
+                            row.potonganBase = Number(updatedUser.potonganBase) || 0;
+                        }
+                        
+                        // Hitung ulang Total
+                        row.totalPotongan = row.potonganBase * numAbsen;
+                        row.totalGaji = row.gajiPokok + numLembur + numBonus - row.totalPotongan;
+                    }
+                }
+
+                // 3. Render ulang tabel UI dengan angka hasil perhitungan yang baru
+                renderTable();
 
             } catch (err) {
                 handleSupabaseError(err, 'employees');
@@ -961,21 +993,32 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                 const lembur = source ? Number(source.lembur) : ""; 
                 const bonus = source ? Number(source.bonus) : "";
 
-                const gajiPokok = source ? Number(source.gaji_pokok) : Number(u.gajiPokokBase);
+                // Jika isLocked (Terbit), ambil dari tabel gaji. Jika masih draft, ikuti tabel employee
+const gajiPokok = isLocked ? Number(saved.gaji_pokok) : Number(u.gajiPokokBase);
                 
-                const calcAbsen = absen === "" ? 0 : absen;
-                const calcLembur = lembur === "" ? 0 : lembur;
-                const calcBonus = bonus === "" ? 0 : bonus;
-                
-                const totalPotongan = source ? Number(source.potongan) : (Number(u.potonganBase) * calcAbsen);
-                const totalGaji = source ? Number(source.total_gaji) : (gajiPokok + calcLembur + calcBonus - totalPotongan);
+               const calcKehadiran = kehadiran === "" ? 0 : Number(kehadiran);
+const calcAbsen = absen === "" ? 0 : Number(absen);
+const calcLembur = lembur === "" ? 0 : Number(lembur);
+const calcBonus = bonus === "" ? 0 : Number(bonus);
+
+// Hitungan Potongan Dinamis: (Gaji Pokok / (Hadir + Absen)) dibulatkan 100 ke bawah
+const totalHari = calcKehadiran + calcAbsen;
+let potonganPerAbsen = 0;
+
+if (totalHari > 0) {
+    potonganPerAbsen = Math.floor((gajiPokok / totalHari) / 100) * 100;
+}
+
+const totalPotongan = isLocked ? Number(saved.potongan) : (potonganPerAbsen * calcAbsen);
+                const totalGaji = isLocked ? Number(saved.total_gaji) : (gajiPokok + calcLembur + calcBonus - totalPotongan);
+                // ==========================================
 
                 currentData[u.noid] = {
                     id: source ? source.id : null, 
                     noid: u.noid,
                     nama: u.nama,
                     bonusKehadiranBase: Number(u.bonusKehadiranBase) || 0,
-                    potonganBase: Number(u.potonganBase) || 0,
+                    potonganBase: potonganPerAbsen, // Disinkronkan dengan hitungan terbaru
                     kehadiran: kehadiran,
                     absen: absen,        
                     lembur: lembur,      
@@ -1056,9 +1099,9 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                     <td class="hidden md:table-cell px-2 py-3">
                         <input type="text" inputmode="numeric" placeholder="${formatRp(row.bonusKehadiranBase)}" data-id="${row.noid}" data-field="bonus" value="${row.bonus !== "" ? formatRp(row.bonus) : ""}" class="${inputCls} text-right" ${disabledAttr}>
                     </td>
-                    <td class="hidden md:table-cell px-2 py-3 text-right">
-                        <span class="block text-slate-700 py-1 font-medium">Rp ${formatRp(row.potonganBase)}</span>
-                    </td>
+                   <td class="hidden md:table-cell px-2 py-3 text-right">
+    <span class="block text-slate-700 py-1 font-medium potongan-base-label-${row.noid}">Rp ${formatRp(row.potonganBase)}</span>
+</td>
                     <td class="hidden md:table-cell px-2 py-3">
                         <span class="block text-right text-red-600 font-medium py-1 total-potongan-label-${row.noid}">Rp ${formatRp(row.totalPotongan)}</span>
                     </td>
@@ -1099,9 +1142,9 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
                                     <input type="text" inputmode="numeric" placeholder="${formatRp(row.bonusKehadiranBase)}" data-id="${row.noid}" data-field="bonus" value="${row.bonus !== "" ? formatRp(row.bonus) : ""}" class="${inputCls}" ${disabledAttr}>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-500 mb-1">Pot. Base</label>
-                                    <div class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-slate-700 font-medium text-sm">Rp ${formatRp(row.potonganBase)}</div>
-                                </div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Pot. Base</label>
+    <div class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-slate-700 font-medium text-sm potongan-base-label-${row.noid}">Rp ${formatRp(row.potonganBase)}</div>
+</div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-500 mb-1">Total Potongan</label>
@@ -1194,18 +1237,39 @@ if (jabatan !== 'bendahara' && jabatan !== 'hrd' && jabatan !== 'owner') {
         if (el !== e.target && el.value !== rawVal) el.value = rawVal;
     });
 
-    const numAbsen = row.absen === "" ? 0 : Number(row.absen);
-    const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
-    const numPotonganBase = Number(row.potonganBase) || 0;
-    const numGajiPokok = Number(row.gajiPokok) || 0;
-    const numBonus = Number(row.bonus) || 0;
+    const numKehadiran = row.kehadiran === "" ? 0 : Number(row.kehadiran);
+const numAbsen = row.absen === "" ? 0 : Number(row.absen);
+const numLembur = row.lembur === "" ? 0 : Number(row.lembur);
+const numGajiPokok = Number(row.gajiPokok) || 0;
+const numBonus = Number(row.bonus) || 0;
 
-    if (field === 'absen') {
-        row.totalPotongan = numPotonganBase * numAbsen;
-        document.querySelectorAll(`.total-potongan-label-${noid}`).forEach(el => {
-            el.textContent = `Rp ${formatRp(row.totalPotongan)}`;
-        });
+// Kalkulasi ulang total potongan jika kolom 'absen' ATAU 'kehadiran' berubah
+if (field === 'absen' || field === 'kehadiran') {
+    const totalHari = numKehadiran + numAbsen;
+    let potonganPerAbsen = 0;
+    
+    // Perhitungan dinamis dengan pembulatan 100 ke bawah
+    if (totalHari > 0) {
+        potonganPerAbsen = Math.floor((numGajiPokok / totalHari) / 100) * 100;
+    } else {
+        // Fallback ke nilai base awal jika field kosong/nol
+        potonganPerAbsen = Number(row.potonganBase) || 0; 
     }
+    
+    // 1. SIMPAN KE STATE
+    row.potonganBase = potonganPerAbsen; 
+    row.totalPotongan = potonganPerAbsen * numAbsen;
+    
+    // 2. UPDATE UI: Teks Potongan Base (TAMBAHAN YANG TERLEWAT)
+    document.querySelectorAll(`.potongan-base-label-${noid}`).forEach(el => {
+        el.textContent = `Rp ${formatRp(potonganPerAbsen)}`;
+    });
+
+    // 3. UPDATE UI: Teks Total Potongan (Tabel Desktop & Mobile)
+    document.querySelectorAll(`.total-potongan-label-${noid}`).forEach(el => {
+        el.textContent = `Rp ${formatRp(row.totalPotongan)}`;
+    });
+}
 
     row.totalGaji = numGajiPokok + numLembur + numBonus - (Number(row.totalPotongan) || 0);
     document.querySelectorAll(`.total-label-${noid}`).forEach(el => {
@@ -1232,18 +1296,17 @@ async function saveData() {
             btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 mr-2"></div> Menyimpan...';
             btn.disabled = true;
 
-            const dataToInsert = dataToSave.map(row => ({
-                noid: row.noid,
-                nama: row.nama,
-                periode: currentPeriode,
-                total_kehadiran: Number(row.kehadiran) || 0,
-                absen_izin: Number(row.absen) || 0,
-                gaji_pokok: Number(row.gajiPokok) || 0,
-                lembur: Number(row.lembur) || 0,
-                bonus: Number(row.bonus) || 0,
-                potongan: Number(row.totalPotongan) || 0,
-                total_gaji: Number(row.totalGaji) || 0
-            }));
+           const dataToInsert = dataToSave.map(row => ({
+    noid: row.noid,
+    nama: row.nama,
+    periode: currentPeriode,
+    total_kehadiran: Number(row.kehadiran) || 0,
+    absen_izin: Number(row.absen) || 0,
+    lembur: Number(row.lembur) || 0,
+    bonus: Number(row.bonus) || 0,
+    potongan: Number(row.totalPotongan) || 0,
+    total_gaji: Number(row.totalGaji) || 0
+}));
             
             const noidsToSave = dataToInsert.map(d => d.noid);
 
